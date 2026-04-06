@@ -37,7 +37,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--stone-800);background:var(--sn
 .hero-sub{font-size:1.1rem;font-weight:300;color:rgba(254,253,251,.85);max-width:540px;line-height:1.7;margin-bottom:40px;opacity:0;animation:fadeUp .8s ease .7s forwards;text-shadow:0 1px 8px rgba(0,0,0,.3)}
 .hero-ctas{display:flex;gap:16px;flex-wrap:wrap;opacity:0;animation:fadeUp .8s ease .9s forwards}
 .btn-book{display:inline-flex;align-items:center;gap:10px;padding:18px 36px;background:var(--gold);color:var(--snow);text-decoration:none;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.95rem;letter-spacing:.05em;border:none;cursor:pointer;transition:all .3s ease}
-.btn-book::after{content:'→';transition:transform .3s ease}
+.btn-book::after{content:'\2192';transition:transform .3s ease}
 .btn-book:hover{background:var(--gold-light);transform:translateY(-2px);box-shadow:0 8px 30px rgba(184,134,11,.3)}
 .btn-book:hover::after{transform:translateX(4px)}
 .btn-explore{display:inline-flex;align-items:center;gap:8px;padding:18px 36px;background:transparent;color:var(--snow);text-decoration:none;font-weight:400;font-size:.95rem;letter-spacing:.05em;border:1px solid rgba(254,253,251,.3);cursor:pointer;transition:all .3s ease}
@@ -167,8 +167,6 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
 .pw-datepicker h3{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.3rem;color:var(--stone-800);margin-bottom:24px}
 .pw-date-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
 .pw-date-field label{display:block;font-size:.72rem;font-weight:500;letter-spacing:.15em;text-transform:uppercase;color:var(--stone-400);margin-bottom:8px}
-.pw-date-field input{width:100%;padding:14px 16px;border:1px solid var(--stone-200);background:var(--snow);font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--stone-800);outline:none;transition:border-color .3s ease}
-.pw-date-field input:focus{border-color:var(--gold)}
 .pw-guests{margin-bottom:20px}
 .pw-guests label{display:block;font-size:.72rem;font-weight:500;letter-spacing:.15em;text-transform:uppercase;color:var(--stone-400);margin-bottom:8px}
 .pw-guests select{width:100%;padding:14px 16px;border:1px solid var(--stone-200);background:var(--snow);font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--stone-800);outline:none;cursor:pointer}
@@ -197,6 +195,37 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
 .pw-book-direct:hover{background:var(--gold-light);transform:translateY(-2px);box-shadow:0 8px 30px rgba(184,134,11,.3)}
 @media(max-width:900px){.pw-grid{grid-template-columns:1fr;gap:40px}#price-widget{padding:80px 24px}}
 
+/* Custom Date Picker - replaces native input[type=date] for iOS compatibility */
+.pw-cal-overlay{display:none;position:absolute;z-index:50;background:var(--snow);border:1px solid var(--stone-200);box-shadow:0 12px 40px rgba(0,0,0,.12);padding:20px;width:320px;left:0;top:100%}
+.pw-cal-overlay.open{display:block}
+.pw-cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.pw-cal-header span{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.1rem;color:var(--stone-800)}
+.pw-cal-nav{background:none;border:1px solid var(--stone-200);width:32px;height:32px;cursor:pointer;font-size:1rem;color:var(--stone-600);display:flex;align-items:center;justify-content:center;transition:all .2s ease}
+.pw-cal-nav:hover{border-color:var(--gold);color:var(--gold)}
+.pw-cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px}
+.pw-cal-weekdays span{font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--stone-400);text-align:center;padding:4px 0}
+.pw-cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.pw-cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:.82rem;cursor:pointer;border:none;background:none;color:var(--stone-700);position:relative;transition:all .2s ease;border-radius:0;flex-direction:column;line-height:1}
+.pw-cal-day:hover:not(.booked):not(.empty):not(.past){background:var(--pine-light);color:var(--snow)}
+.pw-cal-day.today{font-weight:700;box-shadow:inset 0 0 0 1px var(--gold)}
+.pw-cal-day.booked{background:var(--stone-100);color:var(--stone-300);cursor:not-allowed;text-decoration:line-through}
+.pw-cal-day.available{background:rgba(45,74,62,.06)}
+.pw-cal-day.selected{background:var(--pine);color:var(--snow);font-weight:600}
+.pw-cal-day.in-range{background:rgba(45,74,62,.12);color:var(--pine)}
+.pw-cal-day.empty{cursor:default}
+.pw-cal-day.past{color:var(--stone-200);cursor:not-allowed}
+.pw-cal-day .day-price{font-size:.48rem;color:var(--stone-400);white-space:nowrap;margin-top:1px}
+.pw-cal-day.booked .day-price{display:none}
+.pw-cal-day.selected .day-price,.pw-cal-day.in-range .day-price{color:inherit;opacity:.7}
+.pw-date-field{position:relative}
+.pw-date-display{width:100%;padding:14px 16px;border:1px solid var(--stone-200);background:var(--snow);font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--stone-800);cursor:pointer;transition:border-color .3s ease;text-align:left;display:flex;align-items:center;justify-content:space-between}
+.pw-date-display:hover,.pw-date-display.active{border-color:var(--gold)}
+.pw-date-display .placeholder{color:var(--stone-400)}
+.pw-date-display .cal-icon{font-size:.9rem;opacity:.4}
+.pw-cal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:49}
+.pw-cal-backdrop.open{display:block}
+@media(max-width:900px){.pw-cal-overlay{width:calc(100vw - 48px);position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);max-height:90vh;overflow-y:auto;z-index:50}}
+
 </style>
 </head>
 <body>
@@ -218,12 +247,12 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
 
 <header class="hero" role="banner">
   <div class="hero-content">
-    <p class="hero-eyebrow">Boulder County &nbsp;·&nbsp; Sunshine Canyon &nbsp;·&nbsp; Colorado</p>
+    <p class="hero-eyebrow">Boulder County &nbsp;&middot;&nbsp; Sunshine Canyon &nbsp;&middot;&nbsp; Colorado</p>
     <h1>A Mountain Retreat<br>Above <em>Boulder</em></h1>
     <p class="hero-sub">Five bedrooms. Panoramic peaks. A hot tub under the stars. Fifteen minutes from Pearl Street — a world away from everything else.</p>
     <div class="hero-ctas">
-      <a href="https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96" target="_blank" rel="noopener" class="btn-book">Book Direct & Save</a>
-      <a href="#about" class="btn-explore">Explore the Retreat ↓</a>
+      <a href="https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96" target="_blank" rel="noopener" class="btn-book">Book Direct &amp; Save</a>
+      <a href="#about" class="btn-explore">Explore the Retreat &#8595;</a>
     </div>
   </div>
 </header>
@@ -274,12 +303,12 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
     <p class="section-label reveal">Amenities</p>
     <h2 class="section-title reveal">Everything you need, nothing you don't</h2>
     <div class="amenities-grid reveal">
-      <div class="amenity"><span class="amenity-icon">♨</span><h3>Hot Tub</h3><p>Soak under the stars with mountain views. Professionally maintained and ready for every guest.</p></div>
-      <div class="amenity"><span class="amenity-icon">◈</span><h3>Mountain Views</h3><p>Panoramic vistas of the Continental Divide and Boulder County's iconic foothills from every window.</p></div>
-      <div class="amenity"><span class="amenity-icon">◉</span><h3>Full Kitchen</h3><p>Cook for the crew. Fully equipped with modern appliances and everything you need for a home-cooked mountain meal.</p></div>
-      <div class="amenity"><span class="amenity-icon">△</span><h3>Fireplace</h3><p>Gather around the fire after a day on the trails. Nothing beats a Colorado evening with a warm hearth.</p></div>
-      <div class="amenity"><span class="amenity-icon">▤</span><h3>High-Speed WiFi</h3><p>Reliable connectivity for remote work, streaming, or staying in touch. Mountain living, modern convenience.</p></div>
-      <div class="amenity"><span class="amenity-icon">◻</span><h3>Private Parking</h3><p>Ample parking for your group. No shared lots, no hunting for spots — just pull in and unwind.</p></div>
+      <div class="amenity"><span class="amenity-icon">&#9832;</span><h3>Hot Tub</h3><p>Soak under the stars with mountain views. Professionally maintained and ready for every guest.</p></div>
+      <div class="amenity"><span class="amenity-icon">&#9670;</span><h3>Mountain Views</h3><p>Panoramic vistas of the Continental Divide and Boulder County's iconic foothills from every window.</p></div>
+      <div class="amenity"><span class="amenity-icon">&#9673;</span><h3>Full Kitchen</h3><p>Cook for the crew. Fully equipped with modern appliances and everything you need for a home-cooked mountain meal.</p></div>
+      <div class="amenity"><span class="amenity-icon">&#9651;</span><h3>Fireplace</h3><p>Gather around the fire after a day on the trails. Nothing beats a Colorado evening with a warm hearth.</p></div>
+      <div class="amenity"><span class="amenity-icon">&#9636;</span><h3>High-Speed WiFi</h3><p>Reliable connectivity for remote work, streaming, or staying in touch. Mountain living, modern convenience.</p></div>
+      <div class="amenity"><span class="amenity-icon">&#9723;</span><h3>Private Parking</h3><p>Ample parking for your group. No shared lots, no hunting for spots — just pull in and unwind.</p></div>
     </div>
   </div>
 </section>
@@ -293,10 +322,10 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
   <p class="section-label reveal">Explore the Area</p>
   <h2 class="section-title reveal">Boulder at your doorstep,<br>wilderness at your back</h2>
   <div class="experience-grid reveal">
-    <div class="exp-card"><p class="exp-card-distance">15 minutes</p><h3>Pearl Street & Downtown Boulder</h3><p>World-class dining, craft breweries, independent shops, and the pedestrian Pearl Street Mall. Farm-to-table restaurants like SALT, morning pastries at Spruce Confections, and the vibrant energy of a true mountain town.</p></div>
+    <div class="exp-card"><p class="exp-card-distance">15 minutes</p><h3>Pearl Street &amp; Downtown Boulder</h3><p>World-class dining, craft breweries, independent shops, and the pedestrian Pearl Street Mall. Farm-to-table restaurants like SALT, morning pastries at Spruce Confections, and the vibrant energy of a true mountain town.</p></div>
     <div class="exp-card"><p class="exp-card-distance">At your door</p><h3>Sunshine Canyon Trail System</h3><p>Step out the door and into Boulder's trail network. The Sunshine Canyon Trail connects to Mount Sanitas, Red Rocks Spur, and the Centennial Trailhead. Hiking, trail running, mountain biking — all world-class, all minutes away.</p></div>
-    <div class="exp-card"><p class="exp-card-distance">10 minutes</p><h3>Gold Hill</h3><p>Colorado's first major gold discovery site. This tiny mountain hamlet features the Gold Hill General Store & Pub for homecooked meals and craft beer, and the Gold Hill Inn's legendary beer garden with live music under the pines.</p></div>
-    <div class="exp-card"><p class="exp-card-distance">20 minutes</p><h3>Chautauqua Park & the Flatirons</h3><p>Boulder's crown jewel. Hike beneath the iconic Flatiron rock formations, explore the historic Chautauqua grounds, or just stare up at one of Colorado's most photographed landscapes.</p></div>
+    <div class="exp-card"><p class="exp-card-distance">10 minutes</p><h3>Gold Hill</h3><p>Colorado's first major gold discovery site. This tiny mountain hamlet features the Gold Hill General Store &amp; Pub for homecooked meals and craft beer, and the Gold Hill Inn's legendary beer garden with live music under the pines.</p></div>
+    <div class="exp-card"><p class="exp-card-distance">20 minutes</p><h3>Chautauqua Park &amp; the Flatirons</h3><p>Boulder's crown jewel. Hike beneath the iconic Flatiron rock formations, explore the historic Chautauqua grounds, or just stare up at one of Colorado's most photographed landscapes.</p></div>
   </div>
 </section>
 
@@ -304,16 +333,33 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
 <section id="price-widget">
   <div class="price-widget-inner">
     <div class="price-widget-header reveal">
-      <p class="section-label">Compare & Save</p>
+      <p class="section-label">Compare &amp; Save</p>
       <h2 class="section-title">Why book direct?</h2>
     </div>
     <div class="pw-grid">
       <div class="pw-datepicker reveal">
         <h3>Check your dates</h3>
         <div class="pw-date-row">
-          <div class="pw-date-field"><label>Check In</label><input type="date" id="pw-checkin"></div>
-          <div class="pw-date-field"><label>Check Out</label><input type="date" id="pw-checkout"></div>
+          <div class="pw-date-field">
+            <label>Check In</label>
+            <button type="button" class="pw-date-display" id="pw-checkin-btn" onclick="openCal('checkin')">
+              <span class="placeholder" id="pw-checkin-label">Select date</span>
+              <span class="cal-icon">&#9662;</span>
+            </button>
+            <input type="hidden" id="pw-checkin">
+            <div class="pw-cal-overlay" id="pw-cal-checkin"></div>
+          </div>
+          <div class="pw-date-field">
+            <label>Check Out</label>
+            <button type="button" class="pw-date-display" id="pw-checkout-btn" onclick="openCal('checkout')">
+              <span class="placeholder" id="pw-checkout-label">Select date</span>
+              <span class="cal-icon">&#9662;</span>
+            </button>
+            <input type="hidden" id="pw-checkout">
+            <div class="pw-cal-overlay" id="pw-cal-checkout"></div>
+          </div>
         </div>
+        <div class="pw-cal-backdrop" id="pw-cal-backdrop" onclick="closeCals()"></div>
         <div class="pw-guests"><label>Guests</label><select id="pw-guests"><option value="2">2 Guests</option><option value="4">4 Guests</option><option value="6">6 Guests</option><option value="8">8 Guests</option><option value="10">10 Guests</option></select></div>
         <button class="pw-check-btn" onclick="comparePrices()">Compare Prices</button>
         <div id="pw-avail-container" style="margin-top:28px">
@@ -332,7 +378,7 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
     <p class="section-label">Book Direct</p>
     <h2 class="section-title">Skip the platform fees.<br>Book with one click.</h2>
     <p>Booking directly through us saves you money compared to Airbnb or VRBO — same property, same professional management by Soundview Partners, lower cost. Your booking is handled by a dedicated property manager, not a call center.</p>
-    <a href="https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96" target="_blank" rel="noopener" class="btn-book">Check Availability & Book</a>
+    <a href="https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96" target="_blank" rel="noopener" class="btn-book">Check Availability &amp; Book</a>
     <p class="booking-alt">Also available on <a href="https://www.airbnb.com/" target="_blank" rel="noopener">Airbnb</a> and <a href="https://www.vrbo.com/" target="_blank" rel="noopener">VRBO</a></p>
   </div>
 </section>
@@ -342,7 +388,7 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
   <h2 class="section-title reveal">What you need to know</h2>
   <div class="details-grid reveal">
     <div class="detail-group"><h3>The Space</h3><ul><li>5 Bedrooms, 4 Bathrooms</li><li>Approximately 4,100 sq ft</li><li>Full kitchen with modern appliances</li><li>Living room with fireplace</li><li>Hot tub with mountain views</li><li>High-speed WiFi throughout</li><li>Private parking</li></ul></div>
-    <div class="detail-group"><h3>Check-In & Policies</h3><ul><li>Check-in: 4:00 PM</li><li>Check-out: 10:00 AM</li><li>Self check-in with smart lock</li><li>Professional cleaning between stays</li><li>Concierge services available</li><li>24/7 guest support from your host</li></ul></div>
+    <div class="detail-group"><h3>Check-In &amp; Policies</h3><ul><li>Check-in: 4:00 PM</li><li>Check-out: 10:00 AM</li><li>Self check-in with smart lock</li><li>Professional cleaning between stays</li><li>Concierge services available</li><li>24/7 guest support from your host</li></ul></div>
     <div class="detail-group"><h3>Location</h3><ul><li>6186 Sunshine Canyon Drive</li><li>Boulder, CO 80302</li><li>15 min to Pearl Street Mall</li><li>10 min to Gold Hill</li><li>20 min to Chautauqua Park</li><li>90 min to ski resorts</li><li>50 min to Denver International (DEN)</li></ul></div>
   </div>
 </section>
@@ -351,29 +397,237 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
   <div class="footer-inner">
     <div><div class="footer-brand">Sunshine Canyon Retreat</div><div class="footer-address">6186 Sunshine Canyon Drive<br>Boulder, Colorado 80302</div></div>
     <div class="footer-links"><a href="#about">The Retreat</a><a href="#gallery">Photos</a><a href="#amenities">Amenities</a><a href="https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96" target="_blank" rel="noopener">Book Now</a></div>
-    <p class="footer-managed">Professionally managed by <a href="https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96" target="_blank" rel="noopener">Soundview Partners</a> &nbsp;·&nbsp; © 2026 Sunshine Canyon Retreat</p>
+    <p class="footer-managed">Professionally managed by <a href="https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96" target="_blank" rel="noopener">Soundview Partners</a> &nbsp;&middot;&nbsp; &copy; 2026 Sunshine Canyon Retreat</p>
   </div>
 </footer>
 
 <script>
 const nav=document.getElementById('mainNav');
-window.addEventListener('scroll',()=>{nav.classList.toggle('scrolled',window.scrollY>80)});
-const reveals=document.querySelectorAll('.reveal');
-const observer=new IntersectionObserver(e=>{e.forEach(entry=>{if(entry.isIntersecting)entry.target.classList.add('visible')})},{threshold:.15,rootMargin:'0px 0px -40px 0px'});
-reveals.forEach(el=>observer.observe(el));
-document.querySelectorAll('.nav-links a').forEach(link=>{link.addEventListener('click',()=>{document.querySelector('.nav-links').classList.remove('open')})});
+window.addEventListener('scroll',function(){nav.classList.toggle('scrolled',window.scrollY>80)});
+var reveals=document.querySelectorAll('.reveal');
+var observer=new IntersectionObserver(function(e){e.forEach(function(entry){if(entry.isIntersecting)entry.target.classList.add('visible')})},{threshold:.15,rootMargin:'0px 0px -40px 0px'});
+reveals.forEach(function(el){observer.observe(el)});
+document.querySelectorAll('.nav-links a').forEach(function(link){link.addEventListener('click',function(){document.querySelector('.nav-links').classList.remove('open')})});
 
-const SUNSHINE_API='https://sunshine-canyon-api.vercel.app/api/calendar';
-const BOOKING_URL='https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96';
-const CLEANING_FEE=135;
-let calendarData=null;
-async function loadCalendar(){try{const resp=await fetch(SUNSHINE_API);if(!resp.ok)throw new Error('x');calendarData=await resp.json();renderAvailabilityBar();setDefaultDates()}catch(e){console.warn('Widget API unavailable');var c=document.getElementById('pw-avail-container');if(c)c.style.display='none'}}
-function setDefaultDates(){var ci=document.getElementById('pw-checkin'),co=document.getElementById('pw-checkout');if(!ci||!co)return;var now=new Date();var d=(5-now.getDay()+7)%7||7;var nf=new Date(now);nf.setDate(now.getDate()+d);ci.value=nf.toISOString().split('T')[0];var ns=new Date(nf);ns.setDate(nf.getDate()+2);co.value=ns.toISOString().split('T')[0];ci.min=now.toISOString().split('T')[0];co.min=now.toISOString().split('T')[0];if(calendarData&&calendarData.calendar){var avail=calendarData.calendar.filter(function(d){return d.available});if(avail.length>=2){var fri=avail.find(function(d){return new Date(d.date+'T12:00:00').getDay()===5});if(fri){ci.value=fri.date;var co2=new Date(fri.date+'T12:00:00');co2.setDate(co2.getDate()+2);co.value=co2.toISOString().split('T')[0]}}}}
-function renderAvailabilityBar(){if(!calendarData||!calendarData.calendar)return;var bar=document.getElementById('pw-avail-bar');if(!bar)return;bar.innerHTML=calendarData.calendar.map(function(d){return '<div class="pw-avail-dot '+(d.available?'available':'booked')+'" title="'+d.date+': '+(d.available?'$'+d.price+'/night':'Booked')+'"></div>'}).join('')}
-function comparePrices(){var checkin=document.getElementById('pw-checkin').value,checkout=document.getElementById('pw-checkout').value,el=document.getElementById('pw-results');if(!checkin||!checkout){el.innerHTML='<div class="pw-placeholder">Please select dates.</div>';return}var ci=new Date(checkin+'T12:00:00'),co=new Date(checkout+'T12:00:00'),nights=Math.round((co-ci)/864e5);if(nights<2){el.innerHTML='<div class="pw-placeholder">Minimum stay is 2 nights.</div>';return}var nt=0,live=false;if(calendarData&&calendarData.calendar){var sd=calendarData.calendar.filter(function(d){var dd=new Date(d.date+'T12:00:00');return dd>=ci&&dd<co});if(sd.length===nights){if(sd.some(function(d){return !d.available})){el.innerHTML='<div class="pw-placeholder">Some dates unavailable. Please adjust.</div>';return}nt=sd.reduce(function(s,d){return s+d.price},0);live=true}}if(!live){nt=((calendarData&&calendarData.summary&&calendarData.summary.avgPrice)||350)*nights}var acc=nt+CLEANING_FEE,af=Math.round(acc*.142),vf=Math.round(acc*.118),at=acc+af,vt=acc+vf,dt=acc,as=at-dt,vs=vt-dt,avg=Math.round(nt/nights);el.innerHTML='<h3 style="font-family:Cormorant Garamond,serif;font-weight:500;font-size:1.3rem;color:var(--stone-800);margin-bottom:8px">'+nights+'-Night Stay</h3><p style="font-size:.82rem;color:var(--stone-400);margin-bottom:20px">'+fmtD(checkin)+' \u2192 '+fmtD(checkout)+(live?'':' (est.)')+'</p><div class="pw-card direct"><div><div class="pw-card-platform">Book Direct</div><div class="pw-card-breakdown">$'+avg+'/night \u00d7 '+nights+' + $'+CLEANING_FEE+' cleaning \u00b7 No fees</div></div><div><div class="pw-card-total">$'+dt.toLocaleString()+'</div><div class="pw-card-pernight">$'+Math.round(dt/nights)+'/night avg</div></div></div><div class="pw-card"><div><div class="pw-card-platform">VRBO</div><div class="pw-card-breakdown">$'+avg+'/night \u00d7 '+nights+' + $'+CLEANING_FEE+' cleaning + $'+vf+' fee</div></div><div><div class="pw-card-total">$'+vt.toLocaleString()+'</div><div class="pw-card-savings">Save $'+vs+' direct</div></div></div><div class="pw-card"><div><div class="pw-card-platform">Airbnb</div><div class="pw-card-breakdown">$'+avg+'/night \u00d7 '+nights+' + $'+CLEANING_FEE+' cleaning + $'+af+' fee</div></div><div><div class="pw-card-total">$'+at.toLocaleString()+'</div><div class="pw-card-savings">Save $'+as+' direct</div></div></div><a href="'+BOOKING_URL+'" target="_blank" rel="noopener" class="pw-book-direct">Book Direct & Save $'+as+'</a><p class="pw-note">'+(live?'Live rates.':'Estimated rates.')+' Platform fees approximate. Booking direct always saves the fee.</p>'}
-function fmtD(s){return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+var SUNSHINE_API='https://sunshine-canyon-api.vercel.app/api/calendar';
+var BOOKING_URL='https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96';
+var CLEANING_FEE=135;
+var calendarData=null;
+var calState={checkin:null,checkout:null,activeCal:null,months:{}};
+
+function daysInMonth(y,m){return new Date(y,m+1,0).getDate()}
+function dateStr(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0')}
+function parseD(s){var p=s.split('-');return new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]),12,0,0)}
+function fmtDisplay(s){if(!s)return null;return parseD(s).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+function todayStr(){var d=new Date();return dateStr(d.getFullYear(),d.getMonth(),d.getDate())}
+
+function getDateInfo(ds){
+  if(!calendarData||!calendarData.calendar)return{available:true,price:null};
+  var entry=calendarData.calendar.find(function(e){return e.date===ds});
+  if(entry)return{available:entry.available,price:entry.price};
+  return{available:true,price:null};
+}
+
+function openCal(which){
+  closeCals();
+  calState.activeCal=which;
+  var el=document.getElementById('pw-cal-'+which);
+  var btn=document.getElementById('pw-'+which+'-btn');
+  btn.classList.add('active');
+  el.classList.add('open');
+  document.getElementById('pw-cal-backdrop').classList.add('open');
+  var ref=which==='checkout'&&calState.checkin?parseD(calState.checkin):new Date();
+  if(!calState.months[which])calState.months[which]={y:ref.getFullYear(),m:ref.getMonth()};
+  renderCal(which);
+}
+
+function closeCals(){
+  calState.activeCal=null;
+  document.querySelectorAll('.pw-cal-overlay').forEach(function(e){e.classList.remove('open')});
+  document.querySelectorAll('.pw-date-display').forEach(function(e){e.classList.remove('active')});
+  document.getElementById('pw-cal-backdrop').classList.remove('open');
+}
+
+function renderCal(which){
+  var el=document.getElementById('pw-cal-'+which);
+  var st=calState.months[which];
+  var y=st.y,m=st.m;
+  var monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var today=todayStr();
+  var dim=daysInMonth(y,m);
+  var firstDay=new Date(y,m,1).getDay();
+
+  var html='<div class="pw-cal-header">';
+  html+='<button type="button" class="pw-cal-nav" onclick="calNav(\''+which+'\',-1)">\u2039</button>';
+  html+='<span>'+monthNames[m]+' '+y+'</span>';
+  html+='<button type="button" class="pw-cal-nav" onclick="calNav(\''+which+'\',1)">\u203A</button>';
+  html+='</div>';
+  html+='<div class="pw-cal-weekdays"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>';
+  html+='<div class="pw-cal-days">';
+
+  for(var i=0;i<firstDay;i++){html+='<div class="pw-cal-day empty"></div>';}
+
+  for(var d=1;d<=dim;d++){
+    var ds=dateStr(y,m,d);
+    var info=getDateInfo(ds);
+    var cls=['pw-cal-day'];
+    var isPast=ds<today;
+    if(isPast)cls.push('past');
+    else if(!info.available)cls.push('booked');
+    else cls.push('available');
+    if(ds===today)cls.push('today');
+    if(ds===calState.checkin||ds===calState.checkout)cls.push('selected');
+    else if(calState.checkin&&calState.checkout&&ds>calState.checkin&&ds<calState.checkout)cls.push('in-range');
+
+    var clickable=!isPast&&info.available;
+    var priceHtml=info.price&&!isPast&&info.available?'<span class="day-price">$'+info.price+'</span>':'';
+    html+='<button type="button" class="'+cls.join(' ')+'" '+(clickable?'onclick="pickDate(\''+which+'\',\''+ds+'\')"':'')+'>'+d+priceHtml+'</button>';
+  }
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function calNav(which,dir){
+  var st=calState.months[which];
+  st.m+=dir;
+  if(st.m>11){st.m=0;st.y++;}
+  if(st.m<0){st.m=11;st.y--;}
+  renderCal(which);
+}
+
+function pickDate(which,ds){
+  if(which==='checkin'){
+    calState.checkin=ds;
+    document.getElementById('pw-checkin').value=ds;
+    document.getElementById('pw-checkin-label').textContent=fmtDisplay(ds);
+    document.getElementById('pw-checkin-label').classList.remove('placeholder');
+    if(!calState.checkout||calState.checkout<=ds){
+      calState.checkout=null;
+      document.getElementById('pw-checkout').value='';
+      document.getElementById('pw-checkout-label').textContent='Select date';
+      document.getElementById('pw-checkout-label').classList.add('placeholder');
+      closeCals();
+      setTimeout(function(){openCal('checkout');},150);
+      var p=parseD(ds);
+      calState.months['checkout']={y:p.getFullYear(),m:p.getMonth()};
+      return;
+    }
+    closeCals();
+  } else {
+    if(calState.checkin&&ds<=calState.checkin){
+      calState.checkin=ds;
+      document.getElementById('pw-checkin').value=ds;
+      document.getElementById('pw-checkin-label').textContent=fmtDisplay(ds);
+      document.getElementById('pw-checkin-label').classList.remove('placeholder');
+      calState.checkout=null;
+      document.getElementById('pw-checkout').value='';
+      document.getElementById('pw-checkout-label').textContent='Select date';
+      document.getElementById('pw-checkout-label').classList.add('placeholder');
+      closeCals();
+      setTimeout(function(){openCal('checkout');},150);
+      return;
+    }
+    calState.checkout=ds;
+    document.getElementById('pw-checkout').value=ds;
+    document.getElementById('pw-checkout-label').textContent=fmtDisplay(ds);
+    document.getElementById('pw-checkout-label').classList.remove('placeholder');
+    closeCals();
+  }
+  if(calState.months['checkin'])renderCal('checkin');
+  if(calState.months['checkout'])renderCal('checkout');
+}
+
+document.addEventListener('click',function(e){
+  if(calState.activeCal&&!e.target.closest('.pw-date-field')&&!e.target.closest('.pw-cal-backdrop')){
+    closeCals();
+  }
+});
+
+function loadCalendar(){
+  fetch(SUNSHINE_API).then(function(resp){
+    if(!resp.ok)throw new Error('x');
+    return resp.json();
+  }).then(function(data){
+    calendarData=data;
+    renderAvailabilityBar();
+    setDefaultDates();
+  }).catch(function(e){
+    console.warn('Widget API unavailable');
+    var c=document.getElementById('pw-avail-container');
+    if(c)c.style.display='none';
+    setDefaultDates();
+  });
+}
+
+function setDefaultDates(){
+  if(calendarData&&calendarData.calendar){
+    var avail=calendarData.calendar.filter(function(d){return d.available});
+    if(avail.length>=2){
+      var fri=avail.find(function(d){return new Date(d.date+'T12:00:00').getDay()===5});
+      if(fri){
+        var co2=new Date(fri.date+'T12:00:00');
+        co2.setDate(co2.getDate()+2);
+        var coStr=dateStr(co2.getFullYear(),co2.getMonth(),co2.getDate());
+        calState.checkin=fri.date;
+        calState.checkout=coStr;
+        document.getElementById('pw-checkin').value=fri.date;
+        document.getElementById('pw-checkout').value=coStr;
+        document.getElementById('pw-checkin-label').textContent=fmtDisplay(fri.date);
+        document.getElementById('pw-checkout-label').textContent=fmtDisplay(coStr);
+        document.getElementById('pw-checkin-label').classList.remove('placeholder');
+        document.getElementById('pw-checkout-label').classList.remove('placeholder');
+        return;
+      }
+    }
+  }
+  var now=new Date();
+  var d=(5-now.getDay()+7)%7||7;
+  var nf=new Date(now);
+  nf.setDate(now.getDate()+d);
+  var ciStr=dateStr(nf.getFullYear(),nf.getMonth(),nf.getDate());
+  var ns=new Date(nf);
+  ns.setDate(nf.getDate()+2);
+  var coStr=dateStr(ns.getFullYear(),ns.getMonth(),ns.getDate());
+  calState.checkin=ciStr;
+  calState.checkout=coStr;
+  document.getElementById('pw-checkin').value=ciStr;
+  document.getElementById('pw-checkout').value=coStr;
+  document.getElementById('pw-checkin-label').textContent=fmtDisplay(ciStr);
+  document.getElementById('pw-checkout-label').textContent=fmtDisplay(coStr);
+  document.getElementById('pw-checkin-label').classList.remove('placeholder');
+  document.getElementById('pw-checkout-label').classList.remove('placeholder');
+}
+
+function renderAvailabilityBar(){
+  if(!calendarData||!calendarData.calendar)return;
+  var bar=document.getElementById('pw-avail-bar');
+  if(!bar)return;
+  bar.innerHTML=calendarData.calendar.map(function(d){
+    return '<div class="pw-avail-dot '+(d.available?'available':'booked')+'" title="'+d.date+': '+(d.available?'$'+d.price+'/night':'Booked')+'"></div>';
+  }).join('');
+}
+
+function comparePrices(){
+  var checkin=document.getElementById('pw-checkin').value;
+  var checkout=document.getElementById('pw-checkout').value;
+  var el=document.getElementById('pw-results');
+  if(!checkin||!checkout){el.innerHTML='<div class="pw-placeholder">Please select dates above.</div>';return}
+  var ci=new Date(checkin+'T12:00:00'),co=new Date(checkout+'T12:00:00'),nights=Math.round((co-ci)/864e5);
+  if(nights<2){el.innerHTML='<div class="pw-placeholder">Minimum stay is 2 nights.</div>';return}
+  var nt=0,live=false;
+  if(calendarData&&calendarData.calendar){
+    var sd=calendarData.calendar.filter(function(d){var dd=new Date(d.date+'T12:00:00');return dd>=ci&&dd<co});
+    if(sd.length===nights){
+      if(sd.some(function(d){return !d.available})){el.innerHTML='<div class="pw-placeholder">Some dates unavailable. Please adjust.</div>';return}
+      nt=sd.reduce(function(s,d){return s+d.price},0);live=true;
+    }
+  }
+  if(!live){nt=((calendarData&&calendarData.summary&&calendarData.summary.avgPrice)||350)*nights}
+  var acc=nt+CLEANING_FEE,af=Math.round(acc*.142),vf=Math.round(acc*.118),at=acc+af,vt=acc+vf,dt=acc,as=at-dt,vs=vt-dt,avg=Math.round(nt/nights);
+  el.innerHTML='<h3 style="font-family:Cormorant Garamond,serif;font-weight:500;font-size:1.3rem;color:var(--stone-800);margin-bottom:8px">'+nights+'-Night Stay</h3><p style="font-size:.82rem;color:var(--stone-400);margin-bottom:20px">'+fmtDisplay(checkin)+' \u2192 '+fmtDisplay(checkout)+(live?'':' (est.)')+'</p><div class="pw-card direct"><div><div class="pw-card-platform">Book Direct</div><div class="pw-card-breakdown">$'+avg+'/night \u00d7 '+nights+' + $'+CLEANING_FEE+' cleaning \u00b7 No fees</div></div><div><div class="pw-card-total">$'+dt.toLocaleString()+'</div><div class="pw-card-pernight">$'+Math.round(dt/nights)+'/night avg</div></div></div><div class="pw-card"><div><div class="pw-card-platform">VRBO</div><div class="pw-card-breakdown">$'+avg+'/night \u00d7 '+nights+' + $'+CLEANING_FEE+' cleaning + $'+vf+' fee</div></div><div><div class="pw-card-total">$'+vt.toLocaleString()+'</div><div class="pw-card-savings">Save $'+vs+' direct</div></div></div><div class="pw-card"><div><div class="pw-card-platform">Airbnb</div><div class="pw-card-breakdown">$'+avg+'/night \u00d7 '+nights+' + $'+CLEANING_FEE+' cleaning + $'+af+' fee</div></div><div><div class="pw-card-total">$'+at.toLocaleString()+'</div><div class="pw-card-savings">Save $'+as+' direct</div></div></div><a href="'+BOOKING_URL+'" target="_blank" rel="noopener" class="pw-book-direct">Book Direct & Save $'+as+'</a><p class="pw-note">'+(live?'Live rates.':'Estimated rates.')+' Platform fees approximate. Booking direct always saves the fee.</p>';
+}
+
 loadCalendar();
-
 </script>
 </body>
 </html>
