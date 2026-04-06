@@ -159,6 +159,44 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
   .hero h1{font-size:2.5rem}
   .gallery-grid{grid-template-columns:1fr 1fr}
 }
+
+#price-widget{max-width:100%;padding:100px 40px;background:var(--snow);border-top:1px solid var(--stone-200)}
+.price-widget-inner{max-width:1200px;margin:0 auto}
+.pw-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start;margin-top:60px}
+.pw-datepicker{background:var(--stone-50);padding:40px;border:1px solid var(--stone-200)}
+.pw-datepicker h3{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.3rem;color:var(--stone-800);margin-bottom:24px}
+.pw-date-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.pw-date-field label{display:block;font-size:.72rem;font-weight:500;letter-spacing:.15em;text-transform:uppercase;color:var(--stone-400);margin-bottom:8px}
+.pw-date-field input{width:100%;padding:14px 16px;border:1px solid var(--stone-200);background:var(--snow);font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--stone-800);outline:none;transition:border-color .3s ease}
+.pw-date-field input:focus{border-color:var(--gold)}
+.pw-guests{margin-bottom:20px}
+.pw-guests label{display:block;font-size:.72rem;font-weight:500;letter-spacing:.15em;text-transform:uppercase;color:var(--stone-400);margin-bottom:8px}
+.pw-guests select{width:100%;padding:14px 16px;border:1px solid var(--stone-200);background:var(--snow);font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--stone-800);outline:none;cursor:pointer}
+.pw-check-btn{width:100%;padding:16px;background:var(--pine);color:var(--snow);border:none;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.9rem;letter-spacing:.05em;cursor:pointer;transition:all .3s ease}
+.pw-check-btn:hover{background:var(--pine-light)}
+.pw-card{padding:28px 32px;border:1px solid var(--stone-200);background:var(--snow);display:grid;grid-template-columns:1fr auto;align-items:center;gap:20px;position:relative;margin-bottom:12px}
+.pw-card.direct{border:2px solid var(--gold);background:linear-gradient(135deg,rgba(184,134,11,.03) 0%,rgba(184,134,11,0) 100%)}
+.pw-card.direct::before{content:'BEST PRICE';position:absolute;top:-10px;left:24px;background:var(--gold);color:var(--snow);font-size:.62rem;font-weight:600;letter-spacing:.15em;padding:3px 10px}
+.pw-card-platform{font-weight:500;font-size:.95rem;color:var(--stone-800)}
+.pw-card-breakdown{font-size:.78rem;color:var(--stone-400);margin-top:4px}
+.pw-card-total{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:1.8rem;color:var(--stone-800);line-height:1;text-align:right}
+.pw-card.direct .pw-card-total{color:var(--pine)}
+.pw-card-savings{font-size:.78rem;font-weight:600;color:var(--gold);margin-top:4px;text-align:right}
+.pw-card-pernight{font-size:.75rem;color:var(--stone-400);margin-top:2px;text-align:right}
+.pw-placeholder{text-align:center;padding:60px 32px;border:1px dashed var(--stone-200);color:var(--stone-400);font-size:.9rem;line-height:1.6}
+.pw-placeholder-icon{font-size:2rem;margin-bottom:12px;opacity:.5}
+.pw-avail-bar{display:flex;gap:2px;flex-wrap:wrap}
+.pw-avail-dot{width:8px;height:8px;border-radius:1px}
+.pw-avail-dot.available{background:var(--pine-light)}
+.pw-avail-dot.booked{background:var(--stone-200)}
+.pw-avail-legend{display:flex;gap:16px;margin-top:12px;font-size:.7rem;color:var(--stone-400)}
+.pw-avail-legend span{display:flex;align-items:center;gap:4px}
+.pw-avail-legend .dot{width:8px;height:8px;border-radius:1px;display:inline-block}
+.pw-note{font-size:.72rem;color:var(--stone-400);margin-top:16px;line-height:1.5}
+.pw-book-direct{display:inline-flex;align-items:center;gap:10px;padding:16px 32px;background:var(--gold);color:var(--snow);text-decoration:none;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.9rem;letter-spacing:.05em;border:none;cursor:pointer;transition:all .3s ease;margin-top:20px}
+.pw-book-direct:hover{background:var(--gold-light);transform:translateY(-2px);box-shadow:0 8px 30px rgba(184,134,11,.3)}
+@media(max-width:900px){.pw-grid{grid-template-columns:1fr;gap:40px}#price-widget{padding:80px 24px}}
+
 </style>
 </head>
 <body>
@@ -262,6 +300,33 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
   </div>
 </section>
 
+
+<section id="price-widget">
+  <div class="price-widget-inner">
+    <div class="price-widget-header reveal">
+      <p class="section-label">Compare & Save</p>
+      <h2 class="section-title">Why book direct?</h2>
+    </div>
+    <div class="pw-grid">
+      <div class="pw-datepicker reveal">
+        <h3>Check your dates</h3>
+        <div class="pw-date-row">
+          <div class="pw-date-field"><label>Check In</label><input type="date" id="pw-checkin"></div>
+          <div class="pw-date-field"><label>Check Out</label><input type="date" id="pw-checkout"></div>
+        </div>
+        <div class="pw-guests"><label>Guests</label><select id="pw-guests"><option value="2">2 Guests</option><option value="4">4 Guests</option><option value="6">6 Guests</option><option value="8">8 Guests</option><option value="10">10 Guests</option></select></div>
+        <button class="pw-check-btn" onclick="comparePrices()">Compare Prices</button>
+        <div id="pw-avail-container" style="margin-top:28px">
+          <div style="font-size:0.72rem;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:var(--stone-400);margin-bottom:12px">Next 90 Days Availability</div>
+          <div class="pw-avail-bar" id="pw-avail-bar"></div>
+          <div class="pw-avail-legend"><span><span class="dot" style="background:var(--pine-light)"></span> Available</span><span><span class="dot" style="background:var(--stone-200)"></span> Booked</span></div>
+        </div>
+      </div>
+      <div class="reveal"><div id="pw-results"><div class="pw-placeholder"><div class="pw-placeholder-icon">&#9672;</div>Select your dates to see a<br>side-by-side price comparison across<br>Airbnb, VRBO, and booking direct.</div></div></div>
+    </div>
+  </div>
+</section>
+
 <section class="booking-cta" id="book">
   <div class="booking-cta-inner reveal">
     <p class="section-label">Book Direct</p>
@@ -297,6 +362,18 @@ const reveals=document.querySelectorAll('.reveal');
 const observer=new IntersectionObserver(e=>{e.forEach(entry=>{if(entry.isIntersecting)entry.target.classList.add('visible')})},{threshold:.15,rootMargin:'0px 0px -40px 0px'});
 reveals.forEach(el=>observer.observe(el));
 document.querySelectorAll('.nav-links a').forEach(link=>{link.addEventListener('click',()=>{document.querySelector('.nav-links').classList.remove('open')})});
+
+const SUNSHINE_API='https://sunshine-canyon-api.vercel.app/api/calendar';
+const BOOKING_URL='https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96';
+const CLEANING_FEE=135;
+let calendarData=null;
+async function loadCalendar(){try{const resp=await fetch(SUNSHINE_API);if(!resp.ok)throw new Error('x');calendarData=await resp.json();renderAvailabilityBar();setDefaultDates()}catch(e){console.warn('Widget API unavailable');var c=document.getElementById('pw-avail-container');if(c)c.style.display='none'}}
+function setDefaultDates(){var ci=document.getElementById('pw-checkin'),co=document.getElementById('pw-checkout');if(!ci||!co)return;var now=new Date();var d=(5-now.getDay()+7)%7||7;var nf=new Date(now);nf.setDate(now.getDate()+d);ci.value=nf.toISOString().split('T')[0];var ns=new Date(nf);ns.setDate(nf.getDate()+2);co.value=ns.toISOString().split('T')[0];ci.min=now.toISOString().split('T')[0];co.min=now.toISOString().split('T')[0];if(calendarData&&calendarData.calendar){var avail=calendarData.calendar.filter(function(d){return d.available});if(avail.length>=2){var fri=avail.find(function(d){return new Date(d.date+'T12:00:00').getDay()===5});if(fri){ci.value=fri.date;var co2=new Date(fri.date+'T12:00:00');co2.setDate(co2.getDate()+2);co.value=co2.toISOString().split('T')[0]}}}}
+function renderAvailabilityBar(){if(!calendarData||!calendarData.calendar)return;var bar=document.getElementById('pw-avail-bar');if(!bar)return;bar.innerHTML=calendarData.calendar.map(function(d){return '<div class="pw-avail-dot '+(d.available?'available':'booked')+'" title="'+d.date+': '+(d.available?'$'+d.price+'/night':'Booked')+'"></div>'}).join('')}
+function comparePrices(){var checkin=document.getElementById('pw-checkin').value,checkout=document.getElementById('pw-checkout').value,el=document.getElementById('pw-results');if(!checkin||!checkout){el.innerHTML='<div class="pw-placeholder">Please select dates.</div>';return}var ci=new Date(checkin+'T12:00:00'),co=new Date(checkout+'T12:00:00'),nights=Math.round((co-ci)/864e5);if(nights<2){el.innerHTML='<div class="pw-placeholder">Minimum stay is 2 nights.</div>';return}var nt=0,live=false;if(calendarData&&calendarData.calendar){var sd=calendarData.calendar.filter(function(d){var dd=new Date(d.date+'T12:00:00');return dd>=ci&&dd<co});if(sd.length===nights){if(sd.some(function(d){return !d.available})){el.innerHTML='<div class="pw-placeholder">Some dates unavailable. Please adjust.</div>';return}nt=sd.reduce(function(s,d){return s+d.price},0);live=true}}if(!live){nt=((calendarData&&calendarData.summary&&calendarData.summary.avgPrice)||350)*nights}var acc=nt+CLEANING_FEE,af=Math.round(acc*.142),vf=Math.round(acc*.118),at=acc+af,vt=acc+vf,dt=acc,as=at-dt,vs=vt-dt,avg=Math.round(nt/nights);el.innerHTML='<h3 style="font-family:Cormorant Garamond,serif;font-weight:500;font-size:1.3rem;color:var(--stone-800);margin-bottom:8px">'+nights+'-Night Stay</h3><p style="font-size:.82rem;color:var(--stone-400);margin-bottom:20px">'+fmtD(checkin)+' \u2192 '+fmtD(checkout)+(live?'':' (est.)')+'</p><div class="pw-card direct"><div><div class="pw-card-platform">Book Direct</div><div class="pw-card-breakdown">$'+avg+'/night \u00d7 '+nights+' + $'+CLEANING_FEE+' cleaning \u00b7 No fees</div></div><div><div class="pw-card-total">$'+dt.toLocaleString()+'</div><div class="pw-card-pernight">$'+Math.round(dt/nights)+'/night avg</div></div></div><div class="pw-card"><div><div class="pw-card-platform">VRBO</div><div class="pw-card-breakdown">$'+avg+'/night \u00d7 '+nights+' + $'+CLEANING_FEE+' cleaning + $'+vf+' fee</div></div><div><div class="pw-card-total">$'+vt.toLocaleString()+'</div><div class="pw-card-savings">Save $'+vs+' direct</div></div></div><div class="pw-card"><div><div class="pw-card-platform">Airbnb</div><div class="pw-card-breakdown">$'+avg+'/night \u00d7 '+nights+' + $'+CLEANING_FEE+' cleaning + $'+af+' fee</div></div><div><div class="pw-card-total">$'+at.toLocaleString()+'</div><div class="pw-card-savings">Save $'+as+' direct</div></div></div><a href="'+BOOKING_URL+'" target="_blank" rel="noopener" class="pw-book-direct">Book Direct & Save $'+as+'</a><p class="pw-note">'+(live?'Live rates.':'Estimated rates.')+' Platform fees approximate. Booking direct always saves the fee.</p>'}
+function fmtD(s){return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+loadCalendar();
+
 </script>
 </body>
 </html>
