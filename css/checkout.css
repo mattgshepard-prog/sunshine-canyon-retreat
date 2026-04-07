@@ -1,0 +1,710 @@
+/* ============================================================
+   Checkout Drawer — Sunshine Canyon Retreat
+   Dark/earth-tone luxury aesthetic
+   ============================================================ */
+
+/* Custom properties */
+:root {
+  --co-bg: #1a1a14;
+  --co-drawer-bg: #242418;
+  --co-surface: #2e2e20;
+  --co-accent: #c9a96e;
+  --co-accent-hover: #d4b87e;
+  --co-text: #f0ead6;
+  --co-text-secondary: #a8a090;
+  --co-border: rgba(201, 169, 110, 0.2);
+  --co-error: #e07070;
+  --co-success: #7eb87e;
+  --co-radius: 12px;
+  --co-drawer-max-height: 87vh;
+  --co-transition: 0.35s cubic-bezier(0.32, 0, 0.15, 1);
+}
+
+/* ============================================================
+   Overlay
+   ============================================================ */
+
+.checkout-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--co-transition);
+}
+
+.checkout-overlay.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ============================================================
+   Drawer shell
+   ============================================================ */
+
+.checkout-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: var(--co-drawer-max-height);
+  z-index: 1000;
+  background: var(--co-drawer-bg);
+  border-radius: var(--co-radius) var(--co-radius) 0 0;
+  transform: translateY(100%);
+  transition: transform var(--co-transition);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.checkout-drawer.is-open {
+  transform: translateY(0);
+}
+
+/* Desktop — centered panel */
+@media (min-width: 680px) {
+  .checkout-drawer {
+    max-width: 540px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100%);
+    bottom: 0;
+    border-radius: var(--co-radius) var(--co-radius) 0 0;
+  }
+
+  .checkout-drawer.is-open {
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ============================================================
+   Header (sticky across all steps)
+   ============================================================ */
+
+.checkout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--co-border);
+  position: sticky;
+  top: 0;
+  background: var(--co-drawer-bg);
+  z-index: 2;
+}
+
+.checkout-header-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.checkout-step-indicator {
+  font-size: 12px;
+  color: var(--co-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.checkout-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--co-text);
+  margin: 0;
+}
+
+.checkout-close-btn {
+  background: none;
+  border: none;
+  color: var(--co-text-secondary);
+  font-size: 24px;
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s, color 0.2s;
+  padding: 0;
+}
+
+.checkout-close-btn:hover {
+  background: var(--co-surface);
+  color: var(--co-text);
+}
+
+/* ============================================================
+   Steps
+   ============================================================ */
+
+.checkout-step {
+  padding: 24px;
+  display: none;
+}
+
+.checkout-step.is-active {
+  display: block;
+}
+
+/* ============================================================
+   Loading spinner overlay
+   ============================================================ */
+
+.checkout-spinner-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(36, 36, 24, 0.85);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.checkout-spinner-overlay.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.checkout-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--co-border);
+  border-top-color: var(--co-accent);
+  border-radius: 50%;
+  animation: co-spin 0.8s linear infinite;
+}
+
+@keyframes co-spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.checkout-spinner-text {
+  color: var(--co-text-secondary);
+  font-size: 14px;
+  margin: 0;
+}
+
+/* ============================================================
+   Error banner
+   ============================================================ */
+
+.checkout-error-banner {
+  background: rgba(224, 112, 112, 0.12);
+  border: 1px solid var(--co-error);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 0 24px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--co-error);
+  font-size: 14px;
+}
+
+.checkout-fallback-link {
+  color: var(--co-accent);
+  text-decoration: underline;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Quote display — Step 1
+   ============================================================ */
+
+.quote-nights-breakdown {
+  margin-bottom: 16px;
+}
+
+/* JS-generated rows */
+.quote-night-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 14px;
+  color: var(--co-text-secondary);
+  border-bottom: 1px solid var(--co-border);
+}
+
+/* JS-generated line items */
+.quote-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 15px;
+  color: var(--co-text);
+  border-bottom: 1px solid var(--co-border);
+}
+
+.quote-line.is-total {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--co-accent);
+  border-bottom: none;
+  padding-top: 12px;
+}
+
+.checkout-deposit-notice {
+  background: var(--co-surface);
+  border-left: 3px solid var(--co-accent);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 16px;
+  margin: 20px 0;
+  font-size: 14px;
+  color: var(--co-text);
+}
+
+.checkout-deposit-notice p {
+  margin: 0;
+}
+
+.checkout-policy {
+  margin: 20px 0;
+}
+
+.checkout-section-title {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--co-text-secondary);
+  margin: 0 0 12px;
+}
+
+.checkout-policy-text {
+  font-size: 13px;
+  color: var(--co-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ============================================================
+   Form — Step 2
+   ============================================================ */
+
+.checkout-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.checkout-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.checkout-field label {
+  font-size: 13px;
+  color: var(--co-text-secondary);
+  font-weight: 500;
+}
+
+.checkout-field input {
+  background: var(--co-surface);
+  border: 1px solid var(--co-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: var(--co-text);
+  font-size: 16px; /* 16px prevents iOS zoom */
+  min-height: 44px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.checkout-field input:focus {
+  border-color: var(--co-accent);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.2);
+}
+
+.checkout-field input.has-error {
+  border-color: var(--co-error);
+}
+
+.checkout-field-error {
+  font-size: 12px;
+  color: var(--co-error);
+}
+
+/* ============================================================
+   Upsells — Step 2
+   ============================================================ */
+
+.checkout-upsells {
+  margin-top: 24px;
+}
+
+.upsell-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+/* JS-generated upsell items */
+.upsell-item {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: start;
+  gap: 8px;
+  padding: 12px;
+  background: var(--co-surface);
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.upsell-item.is-selected {
+  border-color: var(--co-accent);
+  background: rgba(201, 169, 110, 0.08);
+}
+
+.upsell-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  cursor: pointer;
+  accent-color: var(--co-accent);
+  margin-top: 2px;
+  align-self: start;
+}
+
+.upsell-item-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--co-text);
+}
+
+.upsell-item-desc {
+  font-size: 12px;
+  color: var(--co-text-secondary);
+  margin-top: 2px;
+}
+
+.upsell-item-price {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--co-accent);
+  white-space: nowrap;
+}
+
+.upsell-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--co-border);
+  font-size: 14px;
+  color: var(--co-text);
+}
+
+.upsell-total-amount {
+  font-weight: 700;
+  color: var(--co-accent);
+  font-size: 16px;
+}
+
+/* ============================================================
+   Fallback (Step 3 when Stripe key unavailable)
+   ============================================================ */
+
+.checkout-payment-fallback {
+  text-align: center;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.checkout-fallback-message {
+  font-size: 15px;
+  color: var(--co-text-secondary);
+  line-height: 1.6;
+  max-width: 340px;
+  margin: 0;
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+
+.checkout-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+  border: none;
+  padding: 12px 24px;
+  width: 100%;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.checkout-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.checkout-btn-primary {
+  background: var(--co-accent);
+  color: #1a1a14;
+}
+
+.checkout-btn-primary:hover:not(:disabled) {
+  background: var(--co-accent-hover);
+}
+
+.checkout-btn-secondary {
+  background: transparent;
+  color: var(--co-text);
+  border: 1px solid var(--co-border);
+}
+
+.checkout-btn-secondary:hover:not(:disabled) {
+  background: var(--co-surface);
+}
+
+/* Actions row */
+.checkout-actions {
+  display: flex;
+  gap: 12px;
+  padding-top: 20px;
+  margin-top: auto;
+}
+
+.checkout-actions.single {
+  flex-direction: column;
+}
+
+/* ============================================================
+   Mobile — all phones (max 679px)
+   ============================================================ */
+
+@media (max-width: 679px) {
+  .checkout-drawer {
+    max-height: 92vh;
+  }
+
+  .checkout-step {
+    padding: 16px;
+  }
+
+  .checkout-header {
+    padding: 16px 16px 12px;
+  }
+
+  .checkout-title {
+    font-size: 16px;
+  }
+}
+
+/* Mobile form — single column */
+@media (max-width: 479px) {
+  .checkout-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   Step 3 — Stripe Elements card form
+   ============================================================ */
+
+.co-charge-notice {
+  background: var(--co-surface);
+  border-left: 3px solid var(--co-accent);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: var(--co-text);
+  line-height: 1.5;
+}
+
+.co-card-label {
+  font-size: 13px;
+  color: var(--co-text-secondary);
+  font-weight: 500;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.co-card-element {
+  background: var(--co-surface);
+  border: 1px solid var(--co-border);
+  border-radius: 8px;
+  padding: 14px;
+  min-height: 44px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  margin-bottom: 8px;
+}
+
+.co-card-element.StripeElement--focus {
+  border-color: var(--co-accent);
+  box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.2);
+}
+
+.co-card-element.StripeElement--invalid {
+  border-color: var(--co-error);
+}
+
+.co-card-errors {
+  font-size: 13px;
+  color: var(--co-error);
+  min-height: 20px;
+  margin-bottom: 16px;
+}
+
+.co-policy-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 20px 0;
+  padding: 14px;
+  background: var(--co-surface);
+  border-radius: 8px;
+  border: 1px solid var(--co-border);
+}
+
+.co-policy-checkbox {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  cursor: pointer;
+  accent-color: var(--co-accent);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.co-policy-label {
+  font-size: 13px;
+  color: var(--co-text-secondary);
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+/* ============================================================
+   Step 4 — Confirmation screen
+   ============================================================ */
+
+.co-confirmation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: 8px;
+}
+
+.co-confirmation-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(126, 184, 126, 0.15);
+  border: 2px solid var(--co-success);
+  color: var(--co-success);
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.co-confirmation-heading {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--co-text);
+  margin: 0 0 8px;
+}
+
+.co-confirmation-email-notice {
+  font-size: 13px;
+  color: var(--co-text-secondary);
+  margin: 0 0 24px;
+}
+
+.co-confirmation-code-block {
+  background: var(--co-surface);
+  border: 1px solid var(--co-border);
+  border-radius: 8px;
+  padding: 16px 24px;
+  margin-bottom: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.co-confirmation-code-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--co-text-secondary);
+  margin-bottom: 6px;
+}
+
+.co-confirmation-code {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--co-accent);
+  letter-spacing: 0.05em;
+}
+
+.co-confirmation-details {
+  width: 100%;
+  text-align: left;
+  font-size: 14px;
+  color: var(--co-text);
+  line-height: 1.8;
+  background: var(--co-surface);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+
+.co-confirmation-upsells {
+  width: 100%;
+  text-align: left;
+  font-size: 13px;
+  color: var(--co-text-secondary);
+  background: var(--co-surface);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+
+.co-confirmation-upsell-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.co-confirmation-total {
+  width: 100%;
+  text-align: right;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--co-accent);
+  padding: 8px 0;
+  border-top: 1px solid var(--co-border);
+}

@@ -227,6 +227,7 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
 @media(max-width:900px){.pw-cal-overlay{width:calc(100vw - 48px);position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);max-height:90vh;overflow-y:auto;z-index:50}}
 
 </style>
+<link rel="stylesheet" href="css/checkout.css">
 </head>
 <body>
 
@@ -241,7 +242,7 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
     <li><a href="#amenities">Amenities</a></li>
     <li><a href="#experience">Explore</a></li>
     <li><a href="#details">Details</a></li>
-    <li><a href="https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96" target="_blank" rel="noopener" class="nav-book">Book Now</a></li>
+    <li><a href="#" class="nav-book" onclick="event.preventDefault(); if(window.SunshineCheckout) window.SunshineCheckout.open(); else window.location.href='https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96';">Book Now</a></li>
   </ul>
 </nav>
 
@@ -251,7 +252,7 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
     <h1>A Mountain Retreat<br>Above <em>Boulder</em></h1>
     <p class="hero-sub">Five bedrooms. Panoramic peaks. A hot tub under the stars. Fifteen minutes from Pearl Street — a world away from everything else.</p>
     <div class="hero-ctas">
-      <a href="https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96" target="_blank" rel="noopener" class="btn-book">Book Direct &amp; Save</a>
+      <a href="#" class="btn-book" onclick="event.preventDefault(); if(window.SunshineCheckout) window.SunshineCheckout.open(); else window.location.href='https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96';">Book Direct &amp; Save</a>
       <a href="#about" class="btn-explore">Explore the Retreat &#8595;</a>
     </div>
   </div>
@@ -378,7 +379,7 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
     <p class="section-label">Book Direct</p>
     <h2 class="section-title">Skip the platform fees.<br>Book with one click.</h2>
     <p>Booking directly through us saves you money compared to Airbnb or VRBO — same property, same professional management by Soundview Partners, lower cost. Your booking is handled by a dedicated property manager, not a call center.</p>
-    <a href="https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96" target="_blank" rel="noopener" class="btn-book">Check Availability &amp; Book</a>
+    <a href="#" class="btn-book" onclick="event.preventDefault(); if(window.SunshineCheckout) window.SunshineCheckout.open(); else window.location.href='https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96';">Check Availability &amp; Book</a>
     <p class="booking-alt">Also available on <a href="https://www.airbnb.com/" target="_blank" rel="noopener">Airbnb</a> and <a href="https://www.vrbo.com/" target="_blank" rel="noopener">VRBO</a></p>
   </div>
 </section>
@@ -629,5 +630,173 @@ function comparePrices(){
 
 loadCalendar();
 </script>
+
+<!-- Dimmed overlay — click to close -->
+<div id="checkout-overlay" class="checkout-overlay" aria-hidden="true"></div>
+
+<!-- Drawer shell -->
+<div id="checkout-drawer" class="checkout-drawer" role="dialog" aria-modal="true" aria-label="Book your stay">
+
+  <!-- Header (persists across all steps) -->
+  <div class="checkout-header">
+    <div class="checkout-header-left">
+      <span class="checkout-step-indicator" id="checkout-step-indicator">Step 1 of 2</span>
+      <h2 class="checkout-title" id="checkout-title">Review Your Stay</h2>
+    </div>
+    <button id="checkout-close-btn" class="checkout-close-btn" aria-label="Close booking">&times;</button>
+  </div>
+
+  <!-- Loading spinner overlay (covers drawer content during API calls) -->
+  <div id="checkout-spinner" class="checkout-spinner-overlay" aria-hidden="true">
+    <div class="checkout-spinner"></div>
+    <p class="checkout-spinner-text">Loading...</p>
+  </div>
+
+  <!-- Error banner (shown when API call fails) -->
+  <div id="checkout-error" class="checkout-error-banner" role="alert" aria-live="polite" hidden>
+    <span id="checkout-error-msg"></span>
+    <a id="checkout-error-fallback" class="checkout-fallback-link" href="https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96" target="_blank" rel="noopener">Book via partner portal &rarr;</a>
+  </div>
+
+  <!-- Step 1: Quote Display -->
+  <div id="checkout-step-1" class="checkout-step" hidden>
+    <div class="checkout-quote-summary">
+      <div id="quote-nights-breakdown" class="quote-nights-breakdown">
+        <!-- JS populates: per-night rows -->
+      </div>
+      <div class="quote-line-items" id="quote-line-items">
+        <!-- JS populates: cleaning, taxes, total -->
+      </div>
+    </div>
+
+    <div class="checkout-deposit-notice">
+      <p id="checkout-deposit-text">$50 deposit today. Remaining <span id="quote-remaining-balance"></span> charged 14 days before check-in.</p>
+    </div>
+
+    <div class="checkout-policy">
+      <h3 class="checkout-section-title">Cancellation Policy</h3>
+      <p class="checkout-policy-text">Free cancellation up to 14 days before check-in. 50% refund up to 7 days before check-in. Non-refundable after that.</p>
+    </div>
+
+    <div class="checkout-actions single">
+      <button id="btn-continue-to-step2" class="checkout-btn checkout-btn-primary" disabled>Continue to Book</button>
+    </div>
+  </div>
+
+  <!-- Step 2: Guest Details + Upsells -->
+  <div id="checkout-step-2" class="checkout-step" hidden>
+    <form id="checkout-guest-form" novalidate>
+      <h3 class="checkout-section-title">Your Details</h3>
+      <div class="checkout-form-row">
+        <div class="checkout-field">
+          <label for="field-first-name">First Name</label>
+          <input type="text" id="field-first-name" name="firstName" autocomplete="given-name" required minlength="1">
+          <span class="checkout-field-error" id="err-first-name" hidden></span>
+        </div>
+        <div class="checkout-field">
+          <label for="field-last-name">Last Name</label>
+          <input type="text" id="field-last-name" name="lastName" autocomplete="family-name" required minlength="1">
+          <span class="checkout-field-error" id="err-last-name" hidden></span>
+        </div>
+      </div>
+      <div class="checkout-form-row">
+        <div class="checkout-field">
+          <label for="field-email">Email</label>
+          <input type="email" id="field-email" name="email" autocomplete="email" required>
+          <span class="checkout-field-error" id="err-email" hidden></span>
+        </div>
+        <div class="checkout-field">
+          <label for="field-phone">Phone</label>
+          <input type="tel" id="field-phone" name="phone" autocomplete="tel" placeholder="+1 (303) 555-1234" required>
+          <span class="checkout-field-error" id="err-phone" hidden></span>
+        </div>
+      </div>
+    </form>
+
+    <div class="checkout-upsells" id="checkout-upsells">
+      <h3 class="checkout-section-title">Add-Ons (Optional)</h3>
+      <div id="upsell-list" class="upsell-list">
+        <!-- JS populates from /api/upsells -->
+      </div>
+      <div class="upsell-total-row" id="upsell-total-row" hidden>
+        <span>Selected add-ons:</span>
+        <span id="upsell-total-amount" class="upsell-total-amount">$0</span>
+      </div>
+    </div>
+
+    <div class="checkout-actions">
+      <button type="button" id="btn-back-to-step1" class="checkout-btn checkout-btn-secondary">Back</button>
+      <button type="submit" form="checkout-guest-form" id="btn-continue-to-payment" class="checkout-btn checkout-btn-primary">Continue to Payment</button>
+    </div>
+  </div>
+
+  <!-- Step 3: Stripe Elements Payment -->
+  <div id="checkout-step-3" class="checkout-step" hidden>
+    <!-- Fallback shown when stripePublishableKey is null (UI-11) -->
+    <div id="checkout-payment-fallback" class="checkout-payment-fallback" hidden>
+      <p class="checkout-fallback-message">Direct booking payments are being set up. In the meantime, complete your booking through our partner portal.</p>
+      <a id="btn-fallback-portal" class="checkout-btn checkout-btn-primary" href="https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96" target="_blank" rel="noopener">Complete Booking &rarr;</a>
+    </div>
+
+    <!-- Stripe Elements form (shown when stripePublishableKey is non-null) -->
+    <div id="stripe-elements-form" hidden>
+      <div class="co-charge-notice" id="co-charge-notice">
+        <!-- JS populates: "You will be charged $50 today. Remaining $X charged 14 days before check-in." -->
+      </div>
+
+      <div class="co-card-label">Card Details</div>
+      <div id="card-element" class="co-card-element">
+        <!-- Stripe.js mounts CardElement here -->
+      </div>
+      <div id="card-errors" class="co-card-errors" role="alert" aria-live="polite" hidden></div>
+
+      <div class="co-policy-row">
+        <input type="checkbox" id="co-policy-checkbox" class="co-policy-checkbox">
+        <label for="co-policy-checkbox" class="co-policy-label">
+          I agree to the cancellation policy: free cancellation up to 14 days before check-in, 50% refund up to 7 days, non-refundable after that.
+        </label>
+      </div>
+
+      <div class="checkout-actions">
+        <button type="button" id="btn-back-to-step2" class="checkout-btn checkout-btn-secondary">Back</button>
+        <button type="button" id="co-confirm-btn" class="checkout-btn checkout-btn-primary" disabled>Confirm Booking</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 4: Confirmation Screen -->
+  <div id="checkout-step-4" class="checkout-step" hidden>
+    <div class="co-confirmation">
+      <div class="co-confirmation-icon" aria-hidden="true">&#10003;</div>
+      <h3 class="co-confirmation-heading">Booking Confirmed!</h3>
+      <p class="co-confirmation-email-notice" id="co-confirmation-email-notice">
+        <!-- JS populates: "A confirmation email has been sent to [email]" -->
+      </p>
+
+      <div class="co-confirmation-code-block">
+        <span class="co-confirmation-code-label">Confirmation Code</span>
+        <span class="co-confirmation-code" id="co-confirmation-code">—</span>
+      </div>
+
+      <div class="co-confirmation-details" id="co-confirmation-details">
+        <!-- JS populates: property name, dates, guest name -->
+      </div>
+
+      <div class="co-confirmation-upsells" id="co-confirmation-upsells" hidden>
+        <!-- JS populates: upsell selections with prices -->
+      </div>
+
+      <div class="co-confirmation-total" id="co-confirmation-total">
+        <!-- JS populates: total amount -->
+      </div>
+
+      <button type="button" id="btn-confirmation-done" class="checkout-btn checkout-btn-primary" style="margin-top:24px">Done</button>
+    </div>
+  </div>
+
+</div>
+<!-- END CHECKOUT DRAWER -->
+<script src="https://js.stripe.com/v3/"></script>
+<script src="js/checkout.js"></script>
 </body>
 </html>
