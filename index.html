@@ -242,7 +242,7 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
     <li><a href="#amenities">Amenities</a></li>
     <li><a href="#experience">Explore</a></li>
     <li><a href="#details">Details</a></li>
-    <li><a href="#" class="nav-book" onclick="event.preventDefault(); if(window.SunshineCheckout) window.SunshineCheckout.open(); else window.location.href='https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96';">Book Now</a></li>
+    <li><a href="#" class="nav-book" data-checkout-open>Book Now</a></li>
   </ul>
 </nav>
 
@@ -252,7 +252,7 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
     <h1>A Mountain Retreat<br>Above <em>Boulder</em></h1>
     <p class="hero-sub">Five bedrooms. Panoramic peaks. A hot tub under the stars. Fifteen minutes from Pearl Street — a world away from everything else.</p>
     <div class="hero-ctas">
-      <a href="#" class="btn-book" onclick="event.preventDefault(); if(window.SunshineCheckout) window.SunshineCheckout.open(); else window.location.href='https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96';">Book Direct &amp; Save</a>
+      <a href="#" class="btn-book" data-checkout-open>Book Direct &amp; Save</a>
       <a href="#about" class="btn-explore">Explore the Retreat &#8595;</a>
     </div>
   </div>
@@ -379,7 +379,7 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
     <p class="section-label">Book Direct</p>
     <h2 class="section-title">Skip the platform fees.<br>Book with one click.</h2>
     <p>Booking directly through us saves you money compared to Airbnb or VRBO — same property, same professional management by Soundview Partners, lower cost. Your booking is handled by a dedicated property manager, not a call center.</p>
-    <a href="#" class="btn-book" onclick="event.preventDefault(); if(window.SunshineCheckout) window.SunshineCheckout.open(); else window.location.href='https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96';">Check Availability &amp; Book</a>
+    <a href="#" class="btn-book" data-checkout-open>Check Availability &amp; Book</a>
     <p class="booking-alt">Also available on <a href="https://www.airbnb.com/" target="_blank" rel="noopener">Airbnb</a> and <a href="https://www.vrbo.com/" target="_blank" rel="noopener">VRBO</a></p>
   </div>
 </section>
@@ -797,6 +797,46 @@ loadCalendar();
 </div>
 <!-- END CHECKOUT DRAWER -->
 <script src="https://js.stripe.com/v3/"></script>
+<script>
+// Bridge existing date picker state to checkout.js expected globals
+(function(){
+  var origPick = window.pickDate;
+  if (typeof origPick === 'function') {
+    window.pickDate = function(which, ds) {
+      origPick(which, ds);
+      window.selectedCheckIn = calState.checkin;
+      window.selectedCheckOut = calState.checkout;
+    };
+  }
+  // Also sync on comparePrices (user may have already picked dates)
+  var origCompare = window.comparePrices;
+  if (typeof origCompare === 'function') {
+    window.comparePrices = function() {
+      window.selectedCheckIn = calState.checkin;
+      window.selectedCheckOut = calState.checkout;
+      origCompare();
+    };
+  }
+  // Sync on initial load too (default dates are set)
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      if (typeof calState !== 'undefined') {
+        window.selectedCheckIn = calState.checkin;
+        window.selectedCheckOut = calState.checkout;
+        var guestEl = document.getElementById('pw-guests');
+        if (guestEl) window.selectedGuests = parseInt(guestEl.value) || 2;
+      }
+    }, 500);
+  });
+  // Sync guest count on change
+  var guestSelect = document.getElementById('pw-guests');
+  if (guestSelect) {
+    guestSelect.addEventListener('change', function() {
+      window.selectedGuests = parseInt(this.value) || 2;
+    });
+  }
+})();
+</script>
 <script src="js/checkout.js"></script>
 </body>
 </html>
