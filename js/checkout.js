@@ -391,7 +391,10 @@
     el('co-charge-notice').textContent = 'You will be charged $50 today. Remaining ' + formatMoney(remaining) + ' will be charged 14 days before check-in.';
 
     // Initialize Stripe with connected account
-    state.stripeInstance = Stripe(publishableKey, { stripeAccount: accountId });
+    // Direct Stripe account - only pass stripeAccount if using Connect
+    var stripeOpts = {};
+    if (accountId) stripeOpts.stripeAccount = accountId;
+    state.stripeInstance = Stripe(publishableKey, stripeOpts);
     var elements = state.stripeInstance.elements();
 
     var cardStyle = {
