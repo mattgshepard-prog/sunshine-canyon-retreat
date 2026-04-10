@@ -697,7 +697,23 @@
         var checkOut = window.selectedCheckOut || null;
         var guests = window.selectedGuests || 2;
         if (!checkIn || !checkOut) {
-          alert('Please select your check-in and check-out dates first.');
+          // Sebastian UX fix: instead of a blocking browser alert, smooth-scroll
+          // the user down to the date picker module and pop the check-in
+          // calendar open so they land exactly where they need to act.
+          var target = document.getElementById('price-widget');
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Wait for the scroll to settle before opening the calendar so the
+            // overlay positions correctly relative to the trigger button.
+            setTimeout(function () {
+              if (typeof window.openCal === 'function') {
+                window.openCal('checkin');
+              } else {
+                var btn = document.getElementById('pw-checkin-btn');
+                if (btn) btn.focus();
+              }
+            }, 600);
+          }
           return;
         }
         window.checkoutOpen({ checkIn: checkIn, checkOut: checkOut, guests: guests });
