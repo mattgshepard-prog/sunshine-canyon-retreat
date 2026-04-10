@@ -817,16 +817,17 @@ loadCalendar();
       origCompare();
     };
   }
-  // Sync on initial load too (default dates are set)
+  // NOTE: We intentionally do NOT auto-sync calState defaults into
+  // window.selectedCheckIn/CheckOut on page load. The site initializes
+  // calState with default Friday-Sunday dates the user never actually
+  // picked, and pre-populating window.* with those defaults caused the
+  // Book Now click handler to bypass the "no dates selected" check and
+  // open the checkout drawer with stale dates that fail against Guesty.
+  // Only set window.selectedCheckIn/CheckOut from real user interaction.
+  // Sync guest count on initial load though, since 2 is a safe default.
   document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(function() {
-      if (typeof calState !== 'undefined') {
-        window.selectedCheckIn = calState.checkin;
-        window.selectedCheckOut = calState.checkout;
-        var guestEl = document.getElementById('pw-guests');
-        if (guestEl) window.selectedGuests = parseInt(guestEl.value) || 2;
-      }
-    }, 500);
+    var guestEl = document.getElementById('pw-guests');
+    if (guestEl) window.selectedGuests = parseInt(guestEl.value) || 2;
   });
   // Sync guest count on change
   var guestSelect = document.getElementById('pw-guests');
@@ -837,6 +838,6 @@ loadCalendar();
   }
 })();
 </script>
-<script src="js/checkout.js?v=20260410a"></script>
+<script src="js/checkout.js?v=20260410b"></script>
 </body>
 </html>
