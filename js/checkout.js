@@ -14,6 +14,17 @@
   const FALLBACK_URL = 'https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96';
 
   /* ----------------------------------------------------------
+     BOOKING KILL SWITCH
+     Set to true to disable all booking functionality.
+     The calendar and pricing display will still work —
+     only the checkout flow is blocked.
+     To re-enable: set BOOKING_DISABLED = false
+  ---------------------------------------------------------- */
+  const BOOKING_DISABLED = true;
+  const DISABLED_MESSAGE = 'Online booking is temporarily unavailable while we update our system. Please contact us directly to reserve your dates.';
+  const DISABLED_CONTACT = 'seb@sv.partners';
+
+  /* ----------------------------------------------------------
      Internal state
   ---------------------------------------------------------- */
   const state = {
@@ -250,9 +261,55 @@
   }
 
   /* ----------------------------------------------------------
+     Maintenance Modal (shown when BOOKING_DISABLED = true)
+  ---------------------------------------------------------- */
+  function showMaintenanceModal() {
+    // Remove existing modal if any
+    var existing = document.getElementById('maintenance-modal-overlay');
+    if (existing) existing.remove();
+
+    var overlay = document.createElement('div');
+    overlay.id = 'maintenance-modal-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:20px;';
+
+    var modal = document.createElement('div');
+    modal.style.cssText = 'background:#1a1a1a;border:1px solid #c9a96e;border-radius:12px;padding:40px 32px;max-width:440px;width:100%;text-align:center;font-family:DM Sans,sans-serif;';
+
+    modal.innerHTML = ''
+      + '<div style="font-size:40px;margin-bottom:16px;">&#128295;</div>'
+      + '<h3 style="color:#f0ead6;font-family:Cormorant Garamond,serif;font-size:22px;margin:0 0 12px;">Booking Temporarily Unavailable</h3>'
+      + '<p style="color:#a8a090;font-size:14px;line-height:1.6;margin:0 0 20px;">' + DISABLED_MESSAGE + '</p>'
+      + '<a href="mailto:' + DISABLED_CONTACT + '" style="display:inline-block;background:#c9a96e;color:#1a1a1a;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:600;font-size:14px;margin-bottom:12px;">Contact Us to Book</a>'
+      + '<br>'
+      + '<button id="maintenance-modal-close" style="background:none;border:1px solid #44403c;color:#a8a090;padding:8px 20px;border-radius:6px;cursor:pointer;font-size:13px;margin-top:8px;">Close</button>';
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Close handlers
+    document.getElementById('maintenance-modal-close').addEventListener('click', function () {
+      overlay.remove();
+    });
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) overlay.remove();
+    });
+    document.addEventListener('keydown', function handler(e) {
+      if (e.key === 'Escape') {
+        overlay.remove();
+        document.removeEventListener('keydown', handler);
+      }
+    });
+  }
+
+  /* ----------------------------------------------------------
      Public API
   ---------------------------------------------------------- */
   window.checkoutOpen = async function ({ checkIn, checkOut, guests = 2 }) {
+    // BOOKING KILL SWITCH — show maintenance modal
+    if (BOOKING_DISABLED) {
+      showMaintenanceModal();
+      return;
+    }
     // Validate params
     if (!checkIn || typeof checkIn !== 'string' || !checkOut || typeof checkOut !== 'string') {
       console.error('checkoutOpen: checkIn and checkOut must be non-empty strings');
@@ -692,6 +749,11 @@
     document.querySelectorAll('.book-direct-btn, [data-checkout-open]').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
         e.preventDefault();
+        // BOOKING KILL SWITCH — intercept at button level too
+        if (BOOKING_DISABLED) {
+          showMaintenanceModal();
+          return;
+        }
         // The existing site stores dates in window.selectedCheckIn / window.selectedCheckOut
         var checkIn = window.selectedCheckIn || null;
         var checkOut = window.selectedCheckOut || null;
