@@ -20,7 +20,7 @@
      only the checkout flow is blocked.
      To re-enable: set BOOKING_DISABLED = false
   ---------------------------------------------------------- */
-  const BOOKING_DISABLED = true;
+  const BOOKING_DISABLED = false;
   const DISABLED_MESSAGE = 'Online booking is temporarily unavailable while we update our system. Please contact us directly to reserve your dates.';
   const DISABLED_CONTACT = 'seb@sv.partners';
 
