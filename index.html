@@ -540,7 +540,7 @@ function pickDate(which,ds){
 }
 
 document.addEventListener('click',function(e){
-  if(calState.activeCal&&!e.target.closest('.pw-date-field')&&!e.target.closest('.pw-cal-backdrop')){
+  if(calState.activeCal&&!e.target.closest('.pw-date-field')&&!e.target.closest('.pw-cal-backdrop')&&!e.target.closest('.pw-cal-overlay')){
     closeCals();
   }
 });
