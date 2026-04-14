@@ -362,7 +362,7 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
           </div>
         </div>
         <div class="pw-cal-backdrop" id="pw-cal-backdrop" onclick="closeCals()"></div>
-        <div class="pw-guests"><label>Guests</label><select id="pw-guests"><option value="2">2 Guests</option><option value="4">4 Guests</option><option value="6">6 Guests</option><option value="8">8 Guests</option><option value="10">10 Guests</option></select></div>
+        <div class="pw-guests"><label>Guests</label><select id="pw-guests"><option value="1">1 Guest</option><option value="2" selected>2 Guests</option><option value="3">3 Guests</option><option value="4">4 Guests</option><option value="5">5 Guests</option><option value="6">6 Guests</option><option value="7">7 Guests</option><option value="8">8 Guests</option><option value="9">9 Guests</option><option value="10">10 Guests</option><option value="11">11 Guests</option><option value="12">12 Guests</option><option value="13">13 Guests</option><option value="14">14 Guests</option><option value="15">15 Guests</option><option value="16">16 Guests</option></select></div>
         <button class="pw-check-btn" onclick="comparePrices()">Compare Prices</button>
         <div id="pw-avail-container" style="margin-top:28px">
           <div style="font-size:0.72rem;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:var(--stone-400);margin-bottom:12px">Next 90 Days Availability</div>
@@ -624,7 +624,7 @@ function comparePrices(){
   /* Show loading state */
   el.innerHTML='<div class="pw-placeholder"><div class="pw-placeholder-icon" style="animation:spin 1s linear infinite">&#9672;</div>Fetching live pricing from Guesty...</div>';
   /* Call the quote API for accurate Guesty pricing */
-  var guestCount=parseInt(document.getElementById('pw-guests').value)||2;
+  var guestCount=2; /* Always quote for 2 guests — pricing is the same regardless of group size */
   fetch('https://sunshine-canyon-api.vercel.app/api/quote',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -644,7 +644,8 @@ function comparePrices(){
     var avg=Math.round(t.accommodation/nights);
     el.innerHTML='<h3 style="font-family:Cormorant Garamond,serif;font-weight:500;font-size:1.3rem;color:var(--stone-800);margin-bottom:8px">'+nights+'-Night Stay</h3><p style="font-size:.82rem;color:var(--stone-400);margin-bottom:20px">'+fmtDisplay(checkin)+' \u2192 '+fmtDisplay(checkout)+'</p><div class="pw-card direct" style="border:2px solid var(--gold-500,#c9a96e)"><span class="pw-best-price" style="display:inline-block;background:var(--gold-500,#c9a96e);color:#fff;font-size:.7rem;font-weight:700;letter-spacing:.08em;padding:2px 10px;border-radius:3px;margin-bottom:8px">BEST PRICE</span><div><div class="pw-card-platform">Book Direct</div><div class="pw-card-breakdown">$'+avg+'/night \u00d7 '+nights+' + fees &amp; taxes included</div></div><div><div class="pw-card-total">$'+dt.toLocaleString()+'</div><div class="pw-card-pernight">$'+Math.round(dt/nights)+'/night avg</div></div></div><div class="pw-card"><div><div class="pw-card-platform">VRBO</div><div class="pw-card-breakdown">$'+dt.toLocaleString()+' + $'+vf+' platform fee</div></div><div><div class="pw-card-total">$'+vt.toLocaleString()+'</div><div class="pw-card-savings">Save $'+vs+' direct</div></div></div><div class="pw-card"><div><div class="pw-card-platform">Airbnb</div><div class="pw-card-breakdown">$'+dt.toLocaleString()+' + $'+af+' platform fee</div></div><div><div class="pw-card-total">$'+at.toLocaleString()+'</div><div class="pw-card-savings">Save $'+as+' direct</div></div></div><a href="javascript:void(0)" onclick="if(window.selectedCheckIn&&window.selectedCheckOut){window.checkoutOpen({checkIn:window.selectedCheckIn,checkOut:window.selectedCheckOut,guests:'+guestCount+'})}else{window.checkoutOpen({checkIn:\x27'+checkin+'\x27,checkOut:\x27'+checkout+'\x27,guests:'+guestCount+'})}" class="pw-book-direct">Book Direct & Save $'+as+'</a><p class="pw-note">Live Guesty rates. Platform fees estimated. Booking direct always saves the fee.</p>';
   }).catch(function(err){
-    /* Fallback: use calendar data if quote API fails */
+    console.error('[comparePrices] Quote API error:', err.message);
+    /* Fallback: use calendar nightly rates + cleaning as estimate */
     var nt=0;
     if(calendarData&&calendarData.calendar){
       var sd=calendarData.calendar.filter(function(d){var dd=new Date(d.date+'T12:00:00');return dd>=ci&&dd<co});
@@ -652,7 +653,7 @@ function comparePrices(){
     }
     if(!nt)nt=((calendarData&&calendarData.summary&&calendarData.summary.avgPrice)||350)*nights;
     var acc=nt+CLEANING_FEE,af=Math.round(acc*.142),vf=Math.round(acc*.118),at=acc+af,vt=acc+vf,dt=acc,as=at-dt,vs=vt-dt,avg=Math.round(nt/nights);
-    el.innerHTML='<div class="pw-placeholder">Could not fetch live pricing. Showing estimates.</div>';
+    el.innerHTML='<h3 style="font-family:Cormorant Garamond,serif;font-weight:500;font-size:1.3rem;color:var(--stone-800);margin-bottom:8px">'+nights+'-Night Stay</h3><p style="font-size:.82rem;color:var(--stone-400);margin-bottom:20px">'+fmtDisplay(checkin)+' \u2192 '+fmtDisplay(checkout)+' (est.)</p><div class="pw-card direct" style="border:2px solid var(--gold-500,#c9a96e)"><span class="pw-best-price" style="display:inline-block;background:var(--gold-500,#c9a96e);color:#fff;font-size:.7rem;font-weight:700;letter-spacing:.08em;padding:2px 10px;border-radius:3px;margin-bottom:8px">BEST PRICE</span><div><div class="pw-card-platform">Book Direct</div><div class="pw-card-breakdown">$'+avg+'/night \u00d7 '+nights+' + $'+CLEANING_FEE+' cleaning \u00b7 No platform fees</div></div><div><div class="pw-card-total">$'+dt.toLocaleString()+'</div><div class="pw-card-pernight">$'+Math.round(dt/nights)+'/night avg</div></div></div><div class="pw-card"><div><div class="pw-card-platform">VRBO</div><div class="pw-card-breakdown">$'+avg+'/night \u00d7 '+nights+' + $'+CLEANING_FEE+' cleaning + $'+vf+' fee</div></div><div><div class="pw-card-total">$'+vt.toLocaleString()+'</div><div class="pw-card-savings">Save $'+vs+' direct</div></div></div><div class="pw-card"><div><div class="pw-card-platform">Airbnb</div><div class="pw-card-breakdown">$'+avg+'/night \u00d7 '+nights+' + $'+CLEANING_FEE+' cleaning + $'+af+' fee</div></div><div><div class="pw-card-total">$'+at.toLocaleString()+'</div><div class="pw-card-savings">Save $'+as+' direct</div></div></div><a href="javascript:void(0)" onclick="if(window.selectedCheckIn&&window.selectedCheckOut){window.checkoutOpen({checkIn:window.selectedCheckIn,checkOut:window.selectedCheckOut,guests:2})}else{window.checkoutOpen({checkIn:\x27'+checkin+'\x27,checkOut:\x27'+checkout+'\x27,guests:2})}" class="pw-book-direct">Book Direct & Save $'+as+'</a><p class="pw-note">Estimated rates (additional fees may apply at checkout). Platform fees approximate. Booking direct always saves the fee.</p>';
   });
 }
 
