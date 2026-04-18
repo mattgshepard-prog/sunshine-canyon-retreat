@@ -227,23 +227,45 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
 @media(max-width:900px){.pw-cal-overlay{width:calc(100vw - 48px);position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);max-height:90vh;overflow-y:auto;z-index:50}}
 
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+/* ============================================================
+   Global ADA / WCAG 2.1 AA baseline (added by compliance patch)
+============================================================ */
+.skip-to-main{position:absolute;top:-100px;left:0;background:var(--stone-900);color:var(--snow);padding:12px 20px;z-index:9999;text-decoration:none;font-weight:600;font-size:.9rem;letter-spacing:.02em;transition:top .2s ease}
+.skip-to-main:focus{top:0}
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  .reveal{opacity:1!important;transform:none!important}
+  .hero-eyebrow,.hero h1,.hero-sub,.hero-ctas{opacity:1!important;animation:none!important}
+}
+/* Footer legal links block (new) */
+.footer-legal-links{display:flex;gap:20px;margin-top:18px;flex-wrap:wrap}
+.footer-legal-links a{font-size:.75rem;color:var(--stone-500);text-decoration:none;transition:color .3s ease}
+.footer-legal-links a:hover{color:var(--gold-light)}
+/* TCPA / consent microcopy */
+.checkout-consent-note{font-size:.72rem;color:var(--stone-500);line-height:1.5;margin-top:6px;font-weight:400}
+
 </style>
 <link rel="stylesheet" href="css/checkout.css">
 </head>
 <body>
 
-<nav id="mainNav">
-  <a href="#" class="nav-logo">Sunshine Canyon Retreat</a>
-  <button class="menu-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">
-    <span></span><span></span><span></span>
+<a href="#main-content" class="skip-to-main">Skip to main content</a>
+
+<nav id="mainNav" aria-label="Main navigation">
+  <a href="#main-content" class="nav-logo">Sunshine Canyon Retreat</a>
+  <button class="menu-toggle" id="menuToggle" onclick="toggleMenu(this)" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
   </button>
-  <ul class="nav-links">
+  <ul class="nav-links" id="navLinks">
     <li><a href="#about">The Retreat</a></li>
     <li><a href="#gallery">Photos</a></li>
     <li><a href="#amenities">Amenities</a></li>
     <li><a href="#experience">Explore</a></li>
     <li><a href="#details">Details</a></li>
-    <li><a href="#" class="nav-book" data-checkout-open>Book Now</a></li>
+    <li><a href="#book" class="nav-book" data-checkout-open>Book Now</a></li>
   </ul>
 </nav>
 
@@ -253,11 +275,13 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
     <h1>A Mountain Retreat<br>Above <em>Boulder</em></h1>
     <p class="hero-sub">Five bedrooms. Panoramic peaks. A hot tub under the stars. Fifteen minutes from Pearl Street — a world away from everything else.</p>
     <div class="hero-ctas">
-      <a href="#" class="btn-book" data-checkout-open>Book Direct &amp; Save</a>
+      <a href="#book" class="btn-book" data-checkout-open>Book Direct &amp; Save</a>
       <a href="#about" class="btn-explore">Explore the Retreat &#8595;</a>
     </div>
   </div>
 </header>
+
+<main id="main-content">
 
 <section id="about">
   <div class="about">
@@ -305,12 +329,12 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
     <p class="section-label reveal">Amenities</p>
     <h2 class="section-title reveal">Everything you need, nothing you don't</h2>
     <div class="amenities-grid reveal">
-      <div class="amenity"><span class="amenity-icon">&#9832;</span><h3>Hot Tub</h3><p>Soak under the stars with mountain views. Professionally maintained and ready for every guest.</p></div>
-      <div class="amenity"><span class="amenity-icon">&#9670;</span><h3>Mountain Views</h3><p>Panoramic vistas of the Continental Divide and Boulder County's iconic foothills from every window.</p></div>
-      <div class="amenity"><span class="amenity-icon">&#9673;</span><h3>Full Kitchen</h3><p>Cook for the crew. Fully equipped with modern appliances and everything you need for a home-cooked mountain meal.</p></div>
-      <div class="amenity"><span class="amenity-icon">&#9651;</span><h3>Fireplace</h3><p>Gather around the fire after a day on the trails. Nothing beats a Colorado evening with a warm hearth.</p></div>
-      <div class="amenity"><span class="amenity-icon">&#9636;</span><h3>High-Speed WiFi</h3><p>Reliable connectivity for remote work, streaming, or staying in touch. Mountain living, modern convenience.</p></div>
-      <div class="amenity"><span class="amenity-icon">&#9723;</span><h3>Private Parking</h3><p>Ample parking for your group. No shared lots, no hunting for spots — just pull in and unwind.</p></div>
+      <div class="amenity"><span class="amenity-icon" aria-hidden="true">&#9832;</span><h3>Hot Tub</h3><p>Soak under the stars with mountain views. Professionally maintained and ready for every guest.</p></div>
+      <div class="amenity"><span class="amenity-icon" aria-hidden="true">&#9670;</span><h3>Mountain Views</h3><p>Panoramic vistas of the Continental Divide and Boulder County's iconic foothills from every window.</p></div>
+      <div class="amenity"><span class="amenity-icon" aria-hidden="true">&#9673;</span><h3>Full Kitchen</h3><p>Cook for the crew. Fully equipped with modern appliances and everything you need for a home-cooked mountain meal.</p></div>
+      <div class="amenity"><span class="amenity-icon" aria-hidden="true">&#9651;</span><h3>Fireplace</h3><p>Gather around the fire after a day on the trails. Nothing beats a Colorado evening with a warm hearth.</p></div>
+      <div class="amenity"><span class="amenity-icon" aria-hidden="true">&#9636;</span><h3>High-Speed WiFi</h3><p>Reliable connectivity for remote work, streaming, or staying in touch. Mountain living, modern convenience.</p></div>
+      <div class="amenity"><span class="amenity-icon" aria-hidden="true">&#9723;</span><h3>Private Parking</h3><p>Ample parking for your group. No shared lots, no hunting for spots — just pull in and unwind.</p></div>
     </div>
   </div>
 </section>
@@ -346,7 +370,7 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
             <label>Check In</label>
             <button type="button" class="pw-date-display" id="pw-checkin-btn" onclick="openCal('checkin')">
               <span class="placeholder" id="pw-checkin-label">Select date</span>
-              <span class="cal-icon">&#9662;</span>
+              <span class="cal-icon" aria-hidden="true">&#9662;</span>
             </button>
             <input type="hidden" id="pw-checkin">
             <div class="pw-cal-overlay" id="pw-cal-checkin"></div>
@@ -355,7 +379,7 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
             <label>Check Out</label>
             <button type="button" class="pw-date-display" id="pw-checkout-btn" onclick="openCal('checkout')">
               <span class="placeholder" id="pw-checkout-label">Select date</span>
-              <span class="cal-icon">&#9662;</span>
+              <span class="cal-icon" aria-hidden="true">&#9662;</span>
             </button>
             <input type="hidden" id="pw-checkout">
             <div class="pw-cal-overlay" id="pw-cal-checkout"></div>
@@ -370,7 +394,7 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
           <div class="pw-avail-legend"><span><span class="dot" style="background:var(--pine-light)"></span> Available</span><span><span class="dot" style="background:var(--stone-200)"></span> Booked</span></div>
         </div>
       </div>
-      <div class="reveal"><div id="pw-results"><div class="pw-placeholder"><div class="pw-placeholder-icon">&#9672;</div>Select your dates to see a<br>side-by-side price comparison across<br>Airbnb, VRBO, and booking direct.</div></div></div>
+      <div class="reveal"><div id="pw-results"><div class="pw-placeholder"><div class="pw-placeholder-icon" aria-hidden="true">&#9672;</div>Select your dates to see a<br>side-by-side price comparison across<br>Airbnb, VRBO, and booking direct.</div></div></div>
     </div>
   </div>
 </section>
@@ -380,7 +404,7 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
     <p class="section-label">Book Direct</p>
     <h2 class="section-title">Skip the platform fees.<br>Book with one click.</h2>
     <p>Booking directly through us saves you money compared to Airbnb or VRBO — same property, same professional management by Soundview Partners, lower cost. Your booking is handled by a dedicated property manager, not a call center.</p>
-    <a href="#" class="btn-book" data-checkout-open>Check Availability &amp; Book</a>
+    <a href="#book" class="btn-book" data-checkout-open>Check Availability &amp; Book</a>
     <p class="booking-alt">Also available on <a href="https://www.airbnb.com/" target="_blank" rel="noopener">Airbnb</a> and <a href="https://www.vrbo.com/" target="_blank" rel="noopener">VRBO</a></p>
   </div>
 </section>
@@ -395,21 +419,65 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
   </div>
 </section>
 
-<footer>
+</main>
+
+<footer role="contentinfo">
   <div class="footer-inner">
-    <div><div class="footer-brand">Sunshine Canyon Retreat</div><div class="footer-address">6186 Sunshine Canyon Drive<br>Boulder, Colorado 80302</div></div>
-    <div class="footer-links"><a href="#about">The Retreat</a><a href="#gallery">Photos</a><a href="#amenities">Amenities</a><a href="https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96" target="_blank" rel="noopener">Book Now</a></div>
+    <div>
+      <div class="footer-brand">Sunshine Canyon Retreat</div>
+      <div class="footer-address">6186 Sunshine Canyon Drive<br>Boulder, Colorado 80302</div>
+    </div>
+    <div>
+      <nav class="footer-links" aria-label="Footer primary">
+        <a href="#about">The Retreat</a>
+        <a href="#gallery">Photos</a>
+        <a href="#amenities">Amenities</a>
+        <a href="https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96" target="_blank" rel="noopener">Book Now</a>
+      </nav>
+      <nav class="footer-legal-links" aria-label="Footer legal">
+        <a href="privacy-policy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="disclaimers.html">Disclaimers</a>
+        <a href="accessibility.html">Accessibility</a>
+      </nav>
+    </div>
     <p class="footer-managed">Professionally managed by <a href="https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96" target="_blank" rel="noopener">Soundview Partners</a> &nbsp;&middot;&nbsp; &copy; 2026 Sunshine Canyon Retreat</p>
   </div>
 </footer>
 
 <script>
+// Menu toggle — sync aria-expanded for screen readers
+function toggleMenu(btn){
+  var links=document.querySelector('.nav-links');
+  var isOpen=links.classList.toggle('open');
+  btn.setAttribute('aria-expanded',isOpen?'true':'false');
+}
+// Close menu on Escape for keyboard users
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){
+    var links=document.querySelector('.nav-links');
+    if(links && links.classList.contains('open')){
+      links.classList.remove('open');
+      var btn=document.getElementById('menuToggle');
+      if(btn)btn.setAttribute('aria-expanded','false');
+    }
+  }
+});
+
 const nav=document.getElementById('mainNav');
 window.addEventListener('scroll',function(){nav.classList.toggle('scrolled',window.scrollY>80)});
 var reveals=document.querySelectorAll('.reveal');
 var observer=new IntersectionObserver(function(e){e.forEach(function(entry){if(entry.isIntersecting)entry.target.classList.add('visible')})},{threshold:.15,rootMargin:'0px 0px -40px 0px'});
 reveals.forEach(function(el){observer.observe(el)});
-document.querySelectorAll('.nav-links a').forEach(function(link){link.addEventListener('click',function(){document.querySelector('.nav-links').classList.remove('open')})});
+document.querySelectorAll('.nav-links a').forEach(function(link){link.addEventListener('click',function(){document.querySelector('.nav-links').classList.remove('open');var btn=document.getElementById('menuToggle');if(btn)btn.setAttribute('aria-expanded','false')})});
+
+// Reset aria-invalid when the user edits a previously-invalid field
+document.addEventListener('input',function(e){
+  var t=e.target;
+  if(t && t.tagName==='INPUT' && t.getAttribute('aria-invalid')==='true'){
+    t.setAttribute('aria-invalid','false');
+  }
+});
 
 var SUNSHINE_API='https://sunshine-canyon-api.vercel.app/api/calendar';
 var BOOKING_URL='https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96';
@@ -719,25 +787,26 @@ loadCalendar();
       <div class="checkout-form-row">
         <div class="checkout-field">
           <label for="field-first-name">First Name</label>
-          <input type="text" id="field-first-name" name="firstName" autocomplete="given-name" required minlength="1">
+          <input type="text" id="field-first-name" name="firstName" autocomplete="given-name" required aria-required="true" aria-invalid="false" aria-describedby="err-first-name" minlength="1">
           <span class="checkout-field-error" id="err-first-name" hidden></span>
         </div>
         <div class="checkout-field">
           <label for="field-last-name">Last Name</label>
-          <input type="text" id="field-last-name" name="lastName" autocomplete="family-name" required minlength="1">
+          <input type="text" id="field-last-name" name="lastName" autocomplete="family-name" required aria-required="true" aria-invalid="false" aria-describedby="err-last-name" minlength="1">
           <span class="checkout-field-error" id="err-last-name" hidden></span>
         </div>
       </div>
       <div class="checkout-form-row">
         <div class="checkout-field">
           <label for="field-email">Email</label>
-          <input type="email" id="field-email" name="email" autocomplete="email" required>
+          <input type="email" id="field-email" name="email" autocomplete="email" required aria-required="true" aria-invalid="false" aria-describedby="err-email">
           <span class="checkout-field-error" id="err-email" hidden></span>
         </div>
         <div class="checkout-field">
           <label for="field-phone">Phone</label>
-          <input type="tel" id="field-phone" name="phone" autocomplete="tel" placeholder="+1 (303) 555-1234" required>
+          <input type="tel" id="field-phone" name="phone" autocomplete="tel" placeholder="+1 (303) 555-1234" required aria-required="true" aria-invalid="false" aria-describedby="phone-consent err-phone">
           <span class="checkout-field-error" id="err-phone" hidden></span>
+          <p id="phone-consent" class="checkout-consent-note">We use your phone number only for booking-related messages (check-in instructions, urgent property issues). We do not send marketing texts or share your number. Standard message and data rates may apply.</p>
         </div>
       </div>
     </form>

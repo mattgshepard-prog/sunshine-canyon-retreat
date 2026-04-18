@@ -53,6 +53,52 @@
   function el(id) { return document.getElementById(id); }
 
   /* ----------------------------------------------------------
+     ADA: focus trap + focus restore for the checkout drawer.
+     - lastFocusedElement is stashed when the drawer opens.
+     - When the drawer closes, focus returns there (restores the
+       user's place in the page for keyboard and screen-reader users).
+     - While the drawer is open, Tab/Shift+Tab wrap within the drawer
+       instead of escaping out to the background page.
+  ---------------------------------------------------------- */
+  var lastFocusedElement = null;
+
+  function getFocusableElements(container) {
+    if (!container) return [];
+    var selector = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    // Filter out elements in hidden steps
+    return Array.prototype.slice.call(container.querySelectorAll(selector))
+      .filter(function (elem) {
+        // Skip elements inside a hidden step
+        var step = elem.closest('.checkout-step');
+        if (step && step.hasAttribute('hidden')) return false;
+        // Skip if element itself hidden or display:none
+        if (elem.offsetParent === null && elem.tagName !== 'A') return false;
+        return true;
+      });
+  }
+
+  function handleFocusTrap(e) {
+    if (e.key !== 'Tab') return;
+    var drawer = el('checkout-drawer');
+    if (!drawer || !drawer.classList.contains('is-open')) return;
+    var focusables = getFocusableElements(drawer);
+    if (focusables.length === 0) return;
+    var first = focusables[0];
+    var last = focusables[focusables.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }
+
+  /* ----------------------------------------------------------
      Spinner — track which buttons spinner disabled
   ---------------------------------------------------------- */
   var spinnerDisabledButtons = new Set();
@@ -105,10 +151,19 @@
      Open / close drawer
   ---------------------------------------------------------- */
   function openDrawer() {
+    // ADA: capture the element that had focus so we can restore it on close
+    lastFocusedElement = document.activeElement;
     el('checkout-drawer').classList.add('is-open');
     el('checkout-overlay').classList.add('is-visible');
     document.body.style.overflow = 'hidden';
     el('checkout-drawer').setAttribute('aria-hidden', 'false');
+    // ADA: attach focus trap and move focus into the drawer
+    document.addEventListener('keydown', handleFocusTrap);
+    // Delay focus until step is visible (goToStep runs after openDrawer)
+    setTimeout(function () {
+      var closeBtn = el('checkout-close-btn');
+      if (closeBtn) closeBtn.focus();
+    }, 50);
   }
 
   function resetDrawer() {
@@ -137,6 +192,12 @@
     el('checkout-overlay').classList.remove('is-visible');
     document.body.style.overflow = '';
     el('checkout-drawer').setAttribute('aria-hidden', 'true');
+    // ADA: remove focus trap and restore focus to the trigger
+    document.removeEventListener('keydown', handleFocusTrap);
+    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+      try { lastFocusedElement.focus(); } catch (e) { /* ignore if element gone */ }
+    }
+    lastFocusedElement = null;
     // After transition completes, reset state
     setTimeout(function () { resetDrawer(); }, 350);
   }
@@ -623,11 +684,14 @@
     var errorMsg = validatorFn(val);
     if (errorMsg) {
       input.classList.add('has-error');
+      // ADA: expose invalid state to assistive tech
+      input.setAttribute('aria-invalid', 'true');
       el(errorId).textContent = errorMsg;
       el(errorId).removeAttribute('hidden');
       return false;
     }
     input.classList.remove('has-error');
+    input.setAttribute('aria-invalid', 'false');
     el(errorId).setAttribute('hidden', '');
     return true;
   }
