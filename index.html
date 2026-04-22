@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -248,7 +248,7 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
 .checkout-consent-note{font-size:.72rem;color:var(--stone-500);line-height:1.5;margin-top:6px;font-weight:400}
 
 </style>
-<link rel="stylesheet" href="css/checkout.css">
+<link rel="stylesheet" href="css/checkout.css?v=20260422a">
 </head>
 <body>
 
@@ -537,6 +537,8 @@ function renderCal(which){
 
   for(var i=0;i<firstDay;i++){html+='<div class="pw-cal-day empty"></div>';}
 
+  // ADA: date-formatter for descriptive aria-label on each day button
+  var ariaDateFmt=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
   for(var d=1;d<=dim;d++){
     var ds=dateStr(y,m,d);
     var info=getDateInfo(ds);
@@ -546,12 +548,31 @@ function renderCal(which){
     else if(!info.available)cls.push('booked');
     else cls.push('available');
     if(ds===today)cls.push('today');
-    if(ds===calState.checkin||ds===calState.checkout)cls.push('selected');
+    var isSelected=(ds===calState.checkin||ds===calState.checkout);
+    if(isSelected)cls.push('selected');
     else if(calState.checkin&&calState.checkout&&ds>calState.checkin&&ds<calState.checkout)cls.push('in-range');
 
     var clickable=!isPast&&info.available;
     var priceHtml=info.price&&!isPast&&info.available?'<span class="day-price">$'+info.price+'</span>':'';
-    html+='<button type="button" class="'+cls.join(' ')+'" '+(clickable?'onclick="pickDate(\''+which+'\',\''+ds+'\')"':'')+'>'+d+priceHtml+'</button>';
+
+    // ADA: build descriptive aria-label so screen readers announce
+    // "Tuesday, April 15, 2026. Available. $425 per night." instead of just "15"
+    var dayLabel=ariaDateFmt.format(parseD(ds));
+    var stateLabel;
+    if(isPast)stateLabel='Past date, not selectable';
+    else if(!info.available)stateLabel='Booked, not available';
+    else if(ds===calState.checkin)stateLabel='Selected as check-in';
+    else if(ds===calState.checkout)stateLabel='Selected as check-out';
+    else stateLabel='Available';
+    var priceLabel=(info.price&&!isPast&&info.available)?(', $'+info.price+' per night'):'';
+    var ariaLabel=dayLabel+'. '+stateLabel+priceLabel+'.';
+
+    var ariaAttrs=' aria-label="'+ariaLabel+'"';
+    if(!clickable)ariaAttrs+=' aria-disabled="true" disabled';
+    if(isSelected)ariaAttrs+=' aria-selected="true"';
+    if(ds===today)ariaAttrs+=' aria-current="date"';
+
+    html+='<button type="button" class="'+cls.join(' ')+'"'+ariaAttrs+(clickable?' onclick="pickDate(\''+which+'\',\''+ds+'\')"':'')+'>'+d+priceHtml+'</button>';
   }
   html+='</div>';
   el.innerHTML=html;

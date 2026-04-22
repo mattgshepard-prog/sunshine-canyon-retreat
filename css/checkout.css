@@ -327,6 +327,15 @@
   box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.2);
 }
 
+/* ADA: high-contrast focus ring for keyboard users (WCAG 2.4.7 / 1.4.11).
+   :focus-visible only fires for keyboard focus, so mouse clicks keep
+   the subtle existing look. */
+.checkout-field input:focus-visible {
+  outline: 2px solid var(--co-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.35);
+}
+
 .checkout-field input.has-error {
   border-color: var(--co-error);
 }
@@ -559,7 +568,12 @@
 
 .co-card-element.StripeElement--focus {
   border-color: var(--co-accent);
-  box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.2);
+  /* ADA: higher-contrast focus ring — the real input is in a cross-origin
+     iframe so :focus-visible does not reach it; we always show this ring
+     when Stripe flags focus. */
+  outline: 2px solid var(--co-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.35);
 }
 
 .co-card-element.StripeElement--invalid {
@@ -707,4 +721,23 @@
   color: var(--co-accent);
   padding: 8px 0;
   border-top: 1px solid var(--co-border);
+}
+
+
+/* ============================================================
+   ADA: keyboard focus rings for checkout buttons (WCAG 2.4.7)
+   :focus-visible keeps mouse clicks unaffected.
+============================================================ */
+.checkout-btn:focus-visible,
+.checkout-close-btn:focus-visible {
+  outline: 2px solid var(--co-accent);
+  outline-offset: 2px;
+}
+.co-policy-checkbox:focus-visible {
+  outline: 2px solid var(--co-accent);
+  outline-offset: 2px;
+}
+.upsell-item input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--co-accent);
+  outline-offset: 2px;
 }
