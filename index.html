@@ -43,13 +43,13 @@ body{font-family:'DM Sans',sans-serif;color:var(--stone-800);background:var(--sn
 .btn-explore{display:inline-flex;align-items:center;gap:8px;padding:18px 36px;background:transparent;color:var(--snow);text-decoration:none;font-weight:400;font-size:.95rem;letter-spacing:.05em;border:1px solid rgba(254,253,251,.3);cursor:pointer;transition:all .3s ease}
 .btn-explore:hover{border-color:var(--snow);background:rgba(254,253,251,.05)}
 
-nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:24px 40px;display:flex;justify-content:space-between;align-items:center;transition:all .4s ease}
-nav.scrolled{background:rgba(254,253,251,.95);backdrop-filter:blur(20px);padding:16px 40px;box-shadow:0 1px 0 var(--stone-200)}
+nav#mainNav{position:fixed;top:0;left:0;right:0;z-index:100;padding:24px 40px;display:flex;justify-content:space-between;align-items:center;transition:all .4s ease}
+nav#mainNav.scrolled{background:rgba(254,253,251,.95);backdrop-filter:blur(20px);padding:16px 40px;box-shadow:0 1px 0 var(--stone-200)}
 .nav-logo{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:1.3rem;color:var(--snow);text-decoration:none;letter-spacing:.02em;transition:color .4s ease;text-shadow:0 1px 4px rgba(0,0,0,.3)}
-nav.scrolled .nav-logo{color:var(--stone-800);text-shadow:none}
+nav#mainNav.scrolled .nav-logo{color:var(--stone-800);text-shadow:none}
 .nav-links{display:flex;gap:32px;align-items:center;list-style:none}
 .nav-links a{font-size:.85rem;font-weight:400;color:rgba(254,253,251,.8);text-decoration:none;letter-spacing:.04em;transition:color .3s ease;text-shadow:0 1px 4px rgba(0,0,0,.2)}
-nav.scrolled .nav-links a{color:var(--stone-600);text-shadow:none}
+nav#mainNav.scrolled .nav-links a{color:var(--stone-600);text-shadow:none}
 .nav-links a:hover{color:var(--gold-light)}
 .nav-book{padding:10px 24px!important;background:var(--gold)!important;color:var(--snow)!important;font-weight:600!important;text-shadow:none!important;transition:all .3s ease!important}
 .nav-book:hover{background:var(--gold-light)!important}
@@ -130,7 +130,7 @@ footer{max-width:100%;background:var(--stone-900);padding:60px 40px}
 .reveal.visible{opacity:1;transform:translateY(0)}
 .menu-toggle{display:none;background:none;border:none;cursor:pointer;padding:8px;z-index:110}
 .menu-toggle span{display:block;width:24px;height:2px;background:var(--snow);margin:5px 0;transition:all .3s ease}
-nav.scrolled .menu-toggle span{background:var(--stone-800)}
+nav#mainNav.scrolled .menu-toggle span{background:var(--stone-800)}
 
 @media(max-width:900px){
   .menu-toggle{display:block}
@@ -147,7 +147,7 @@ nav.scrolled .menu-toggle span{background:var(--stone-800)}
   section{padding:80px 24px}
   .hero{padding:0 0 60px 0}
   .hero-content{padding:0 24px}
-  nav{padding:20px 24px}
+  nav#mainNav{padding:20px 24px}
   #amenities,.booking-cta{padding:80px 24px}
   .photo-break{grid-template-columns:1fr}
   .photo-break img{height:250px}
