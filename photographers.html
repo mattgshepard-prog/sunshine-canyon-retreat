@@ -50,19 +50,19 @@ img{display:block;max-width:100%}
 a{color:inherit}
 
 /* ---------- nav ---------- */
-nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:24px 40px;display:flex;justify-content:space-between;align-items:center;transition:all .4s ease}
-nav.scrolled{background:rgba(254,253,251,.95);backdrop-filter:blur(20px);padding:16px 40px;box-shadow:0 1px 0 var(--stone-200)}
+nav#mainNav{position:fixed;top:0;left:0;right:0;z-index:100;padding:24px 40px;display:flex;justify-content:space-between;align-items:center;transition:all .4s ease}
+nav#mainNav.scrolled{background:rgba(254,253,251,.95);backdrop-filter:blur(20px);padding:16px 40px;box-shadow:0 1px 0 var(--stone-200)}
 .nav-logo{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:1.3rem;color:var(--snow);text-decoration:none;letter-spacing:.02em;transition:color .4s ease;text-shadow:0 1px 4px rgba(0,0,0,.3)}
-nav.scrolled .nav-logo{color:var(--stone-800);text-shadow:none}
+nav#mainNav.scrolled .nav-logo{color:var(--stone-800);text-shadow:none}
 .nav-links{display:flex;gap:32px;align-items:center;list-style:none}
 .nav-links a{font-size:.85rem;font-weight:400;color:rgba(254,253,251,.8);text-decoration:none;letter-spacing:.04em;transition:color .3s ease;text-shadow:0 1px 4px rgba(0,0,0,.2)}
-nav.scrolled .nav-links a{color:var(--stone-600);text-shadow:none}
+nav#mainNav.scrolled .nav-links a{color:var(--stone-600);text-shadow:none}
 .nav-links a:hover{color:var(--gold-light)}
 .nav-book{padding:10px 24px!important;background:var(--gold)!important;color:var(--snow)!important;font-weight:600!important;text-shadow:none!important;transition:all .3s ease!important}
 .nav-book:hover{background:var(--gold-light)!important}
 .menu-toggle{display:none;background:none;border:none;cursor:pointer;flex-direction:column;gap:5px;padding:8px}
 .menu-toggle span{display:block;width:24px;height:2px;background:var(--snow);transition:background .4s ease}
-nav.scrolled .menu-toggle span{background:var(--stone-800)}
+nav#mainNav.scrolled .menu-toggle span{background:var(--stone-800)}
 
 /* ---------- hero ---------- */
 .hero{position:relative;min-height:100vh;display:flex;align-items:flex-end;padding:0 0 80px 0;background-color:var(--pine-dark);background-image:linear-gradient(175deg,rgba(30,51,43,.38) 0%,rgba(30,51,43,.10) 24%,rgba(0,0,0,0) 44%,rgba(0,0,0,.35) 72%,rgba(28,25,23,.85) 100%),url('images/shoot-aerial-wide.jpg');background-position:center;background-size:cover;background-repeat:no-repeat}
@@ -166,6 +166,11 @@ footer{background:var(--stone-900);color:rgba(254,253,251,.6);padding:64px 40px 
 .footer-links{display:flex;justify-content:center;gap:28px;flex-wrap:wrap;margin-bottom:26px}
 .footer-links a{font-size:.85rem;color:rgba(254,253,251,.6);text-decoration:none;transition:color .3s ease}
 .footer-links a:hover{color:var(--gold-light)}
+.footer-legal-links{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:26px}
+.footer-legal-links a{font-size:.75rem;color:var(--stone-500);text-decoration:none;transition:color .3s ease}
+.footer-legal-links a:hover{color:var(--gold-light)}
+.skip-link{position:absolute;left:-9999px;top:0;z-index:200;padding:12px 20px;background:var(--snow);color:var(--stone-900);font-size:.85rem;text-decoration:none}
+.skip-link:focus{left:12px;top:12px}
 .footer-managed{font-size:.76rem;color:rgba(254,253,251,.35);line-height:1.7}
 .footer-managed a{color:rgba(254,253,251,.55);text-decoration:none}
 
@@ -179,8 +184,8 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold-light);outline
 
 /* ---------- responsive ---------- */
 @media(max-width:900px){
-  nav{padding:18px 22px}
-  nav.scrolled{padding:14px 22px}
+  nav#mainNav{padding:18px 22px}
+  nav#mainNav.scrolled{padding:14px 22px}
   .menu-toggle{display:flex}
   .nav-links{position:absolute;top:100%;left:0;right:0;background:rgba(254,253,251,.98);backdrop-filter:blur(20px);flex-direction:column;gap:0;padding:0;max-height:0;overflow:hidden;transition:max-height .4s ease;box-shadow:0 8px 24px rgba(0,0,0,.08)}
   .nav-links.open{max-height:420px}
@@ -208,7 +213,9 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold-light);outline
 </head>
 <body>
 
-<nav id="mainNav">
+<a href="#invitation" class="skip-link">Skip to content</a>
+
+<nav id="mainNav" aria-label="Main navigation">
   <a href="index.html" class="nav-logo">Sunshine Canyon Retreat</a>
   <button class="menu-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">
     <span></span><span></span><span></span>
@@ -416,16 +423,22 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold-light);outline
   </div>
 </section>
 
-<footer>
+<footer role="contentinfo">
   <div class="footer-inner">
     <div class="footer-brand">Sunshine Canyon Retreat</div>
     <div class="footer-address">6186 Sunshine Canyon Drive<br>Boulder, Colorado 80302</div>
-    <div class="footer-links">
+    <nav class="footer-links" aria-label="Footer primary">
       <a href="index.html">The Retreat</a>
       <a href="index.html#gallery">Photos</a>
       <a href="index.html#amenities">Amenities</a>
       <a href="#rsvp" data-rsvp>RSVP for August 18</a>
-    </div>
+    </nav>
+    <nav class="footer-legal-links" aria-label="Footer legal">
+      <a href="privacy-policy.html">Privacy Policy</a>
+      <a href="terms.html">Terms of Service</a>
+      <a href="disclaimers.html">Disclaimers</a>
+      <a href="accessibility.html">Accessibility</a>
+    </nav>
     <p class="footer-managed">&copy; 2026 Sunshine Canyon Retreat</p>
   </div>
 </footer>
