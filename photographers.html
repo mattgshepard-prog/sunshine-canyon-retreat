@@ -144,6 +144,7 @@ section{padding:110px 40px;max-width:1200px;margin:0 auto}
 .dates-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:var(--stone-200);margin-top:48px;border:1px solid var(--stone-200)}
 .date-card{background:var(--snow);padding:32px 28px}
 .date-card .when{font-family:'Cormorant Garamond',serif;font-size:1.45rem;color:var(--stone-900);margin-bottom:8px;line-height:1.2}
+.dates-fresh{margin-top:34px;padding-top:24px;border-top:1px solid var(--stone-200);font-size:.88rem;line-height:1.7;color:var(--stone-500);max-width:640px}
 .date-card .tag{display:inline-block;font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--pine);background:var(--stone-100);padding:5px 10px;margin-bottom:14px}
 .date-card .tag.best{color:var(--snow);background:var(--pine)}
 .date-card p{font-size:.88rem;line-height:1.7;color:var(--stone-500)}
@@ -387,27 +388,28 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold-light);outline
   </div>
   <div class="dates-grid reveal">
     <div class="date-card">
-      <span class="tag best">Best date</span>
-      <div class="when">Tuesday, October 6</div>
-      <p>A checkout day. Guests are out by ten and nothing is booked that night, so the afternoon and the evening are genuinely free and it costs me nothing to hand you. Peak color, and the cheapest date on this page.</p>
+      <span class="tag best">Best value</span>
+      <div class="when" data-slot="checkout">Sept 27<br>October 5<br>October 18</div>
+      <p>Checkout days. The guests are gone by ten and nothing is booked that night, so the afternoon and the evening are genuinely free. It costs me nothing to hand you one, and these carry the lowest session fee.</p>
     </div>
     <div class="date-card">
       <span class="tag">Weeknights</span>
-      <div class="when">October 7 &ndash; 8<br>October 12 &ndash; 15</div>
-      <p>Six midweek evenings in peak color. Best fit for seniors, couples, engagements and brand work. School-age families can make a 4:30 start if they are coming from Boulder.</p>
+      <div class="when" data-slot="weeknight">September 28 &ndash; October 1<br>October 6 &ndash; 8<br>October 12 &ndash; 15</div>
+      <p>Monday through Thursday. Best fit for seniors, couples, engagements and brand work. School-age families can make a 4:30 start if they are coming from Boulder.</p>
     </div>
     <div class="date-card">
-      <span class="tag">Weekend</span>
-      <div class="when">October 9 &ndash; 11</div>
-      <p>Friday through Sunday at peak color, and CU has a bye week so Boulder is not full. These cost me a rental night, so they carry a higher fee and they are the ones most likely to disappear first.</p>
+      <span class="tag">Weekends</span>
+      <div class="when" data-slot="weekend">October 9 &ndash; 11</div>
+      <p>Friday through Sunday. These cost me a rental night, so they carry a higher fee and they are the ones most likely to disappear first. CU has a bye week on October 10.</p>
     </div>
     <div class="date-card">
-      <span class="tag">Shoulder</span>
-      <div class="when">September 28 &ndash; October 1</div>
-      <p>The deciduous pockets by the house are just turning and the evenings are still long. September 28 is a checkout day. Take this week if you want fall color in your gallery before everyone else posts theirs.</p>
+      <span class="tag">How it works</span>
+      <div class="when">Three nights, or one evening</div>
+      <p>As a rental the house has a three-night minimum, so nobody can book a single night out from under you. A session fee is the only way to get one evening here, and it is a fraction of a three-night stay.</p>
     </div>
   </div>
-</section>
+  <p class="dates-fresh" id="datesFresh">These come off the booking calendar. Anything reserved before you get to it drops off this list on its own.</p>
+  </section>
 
 <section id="rsvp">
   <div class="rsvp-inner">
@@ -489,5 +491,82 @@ const RSVP_LINK = "https://cal.com/mattshepard/sunshine-open-house";
 })();
 </script>
 
+<script>
+/* Fall date cards read live availability from the Guesty proxy.
+   If the fetch fails for any reason the hardcoded dates above stay put. */
+(function () {
+  var API = "https://sunshine-canyon-api.vercel.app/api/calendar";
+  var WIN_START = "2026-09-27", WIN_END = "2026-10-31";
+  var MON = ["January","February","March","April","May","June","July",
+             "August","September","October","November","December"];
+
+  function toDate(k) { var p = k.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
+  function toKey(d) {
+    return d.getFullYear() + "-" +
+      ("0" + (d.getMonth()+1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+  }
+  function dayBefore(k) { var d = toDate(k); d.setDate(d.getDate()-1); return toKey(d); }
+
+  function runs(list) {
+    if (!list.length) return "";
+    var out = [], cur = [list[0]];
+    for (var i = 1; i < list.length; i++) {
+      if (dayBefore(list[i]) === list[i-1]) cur.push(list[i]);
+      else { out.push(cur); cur = [list[i]]; }
+    }
+    out.push(cur);
+    return out.map(function (r) {
+      var a = toDate(r[0]), b = toDate(r[r.length-1]);
+      if (r.length === 1) return MON[a.getMonth()] + " " + a.getDate();
+      if (a.getMonth() === b.getMonth())
+        return MON[a.getMonth()] + " " + a.getDate() + " \u2013 " + b.getDate();
+      return MON[a.getMonth()] + " " + a.getDate() + " \u2013 " +
+             MON[b.getMonth()] + " " + b.getDate();
+    }).join("<br>");
+  }
+
+  fetch(API).then(function (r) {
+    if (!r.ok) throw new Error("bad status");
+    return r.json();
+  }).then(function (j) {
+    var cal = j && j.calendar;
+    if (!cal || !cal.length) throw new Error("no calendar");
+
+    var status = {};
+    cal.forEach(function (d) { status[d.date] = d.status; });
+
+    var open = Object.keys(status).filter(function (k) {
+      return k >= WIN_START && k <= WIN_END && status[k] === "available";
+    }).sort();
+    if (!open.length) throw new Error("nothing open");
+
+    var checkout = [], weeknight = [], weekend = [];
+    open.forEach(function (k) {
+      var dow = toDate(k).getDay();
+      if (status[dayBefore(k)] === "booked") checkout.push(k);
+      else if (dow >= 1 && dow <= 4) weeknight.push(k);
+      else weekend.push(k);
+    });
+
+    var buckets = { checkout: checkout, weeknight: weeknight, weekend: weekend };
+    Object.keys(buckets).forEach(function (slot) {
+      var el = document.querySelector('[data-slot="' + slot + '"]');
+      if (!el) return;
+      var txt = runs(buckets[slot]);
+      if (txt) { el.innerHTML = txt; return; }
+      var card = el.parentNode;
+      while (card && card.className.indexOf("date-card") === -1) card = card.parentNode;
+      if (card) card.style.display = "none";
+    });
+
+    var fresh = document.getElementById("datesFresh");
+    if (fresh) {
+      fresh.innerHTML = "Pulled from the booking calendar the moment you loaded this page. " +
+        "Anything already reserved is not on this list, and anything booked after you read " +
+        "it will drop off on its own. I am not going to advertise a date I cannot give you.";
+    }
+  }).catch(function () { /* static dates stand */ });
+})();
+</script>
 </body>
 </html>
