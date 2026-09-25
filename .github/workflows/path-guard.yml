@@ -1,0 +1,30 @@
+# Goes at .github/workflows/path-guard.yml in mattgshepard-prog/sunshine-canyon-retreat.
+# Committed by Matt. Sarah's GitHub connection has repo scope only (no workflow scope), so she cannot change this file.
+# Then add "path-guard" as a required status check in the master ruleset.
+# Scope: only PRs opened by the Sarah-STR-Manager account, so the rebrand work is unaffected.
+name: path-guard
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  path-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Block protected paths on Sarah's PRs
+        if: github.event.pull_request.user.login == 'Sarah-STR-Manager'
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          changed=$(git diff --name-only "$base" "$head")
+          echo "$changed"
+          bad=$(echo "$changed" | grep -Ev '^events/' || true)
+          if [ -n "$bad" ]; then
+            echo "Sarah may only change files under events/. Blocked:"
+            echo "$bad"
+            exit 1
+          fi
