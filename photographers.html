@@ -6,7 +6,7 @@
 
 <!-- =========================================================================
      EVERGREEN LOCATION PAGE. No event dates anywhere in this file.
-     Open session dates are pulled live from the Guesty proxy at page load.
+     Open session dates are pulled live from the STR Manager calendar at page load.
      CTA buttons fall back to SMS unless RSVP_LINK is set at the bottom.
      ========================================================================= -->
 
@@ -491,10 +491,10 @@ const RSVP_LINK = "";
 </script>
 
 <script>
-/* Fall date cards read live availability from the Guesty proxy.
+/* Fall date cards read live availability from the STR Manager calendar.
    If the fetch fails for any reason the hardcoded dates above stay put. */
 (function () {
-  var API = "https://sunshine-canyon-api.vercel.app/api/calendar";
+  var API = "https://str-manager-api-production.up.railway.app/direct/sunshine/calendar?days=130";
   function _pad(n){ return ("0" + n).slice(-2); }
   function _key(d){ return d.getFullYear() + "-" + _pad(d.getMonth()+1) + "-" + _pad(d.getDate()); }
   var _from = new Date(), _to = new Date();
@@ -536,7 +536,7 @@ const RSVP_LINK = "";
     if (!cal || !cal.length) throw new Error("no calendar");
 
     var status = {};
-    cal.forEach(function (d) { status[d.date] = d.status; });
+    cal.forEach(function (d) { status[d.date] = d.available ? "available" : "booked"; });
 
     var open = Object.keys(status).filter(function (k) {
       return k >= WIN_START && k <= WIN_END && status[k] === "available";
