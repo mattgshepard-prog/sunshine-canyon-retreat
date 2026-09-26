@@ -209,6 +209,10 @@
   font-size: 14px;
 }
 
+.checkout-error-banner[hidden] {
+  display: none;
+}
+
 .checkout-fallback-link {
   color: var(--co-accent);
   text-decoration: underline;

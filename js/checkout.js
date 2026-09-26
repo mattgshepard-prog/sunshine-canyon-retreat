@@ -10,8 +10,11 @@
   /* ----------------------------------------------------------
      Configuration
   ---------------------------------------------------------- */
-  const API_BASE = 'https://sunshine-canyon-api.vercel.app';
-  const FALLBACK_URL = 'https://svpartners.guestybookings.com/en/properties/693366e4e2c2460012d9ed96';
+  // STR Manager direct-booking API (AMS Property Management). Payments go straight to
+  // 6186 Sunshine Canyon Dr, LLC's Stripe account; card details never touch our servers.
+  const API_BASE = 'https://str-manager-api-production.up.railway.app/direct/sunshine';
+  const CONTACT_EMAIL = 'amspropertymgt@gmail.com';
+  const FALLBACK_URL = 'mailto:' + CONTACT_EMAIL + '?subject=' + encodeURIComponent('Sunshine Canyon Retreat booking');
 
   /* ----------------------------------------------------------
      BOOKING KILL SWITCH
@@ -21,8 +24,8 @@
      To re-enable: set BOOKING_DISABLED = false
   ---------------------------------------------------------- */
   const BOOKING_DISABLED = false;
-  const DISABLED_MESSAGE = 'Online booking is temporarily unavailable while we update our system. Please contact us directly to reserve your dates.';
-  const DISABLED_CONTACT = 'seb@sv.partners';
+  const DISABLED_MESSAGE = 'Online booking is temporarily unavailable. Email us and we will reserve your dates.';
+  const DISABLED_CONTACT = CONTACT_EMAIL;
 
   /* ----------------------------------------------------------
      Internal state
@@ -31,17 +34,15 @@
     checkIn: null,           // YYYY-MM-DD
     checkOut: null,          // YYYY-MM-DD
     guests: 2,               // integer
-    quote: null,             // full /api/quote response
-    selectedRatePlan: null,  // ratePlans[0] by default
+    quote: null,             // /direct/sunshine/quote response (all amounts in cents)
+    config: null,            // /direct/sunshine/config response
+    booking: null,           // /direct/sunshine/book response (clientSecret, confirmationCode)
     guest: {                 // from form fields
       firstName: '',
       lastName: '',
       email: '',
       phone: ''
     },
-    selectedUpsells: [],     // array of upsell id strings
-    upsellItems: [],         // catalog from /api/upsells
-    paymentInfo: null,       // /api/payment-info response
     currentStep: 0,          // 0=closed, 1=step1, 2=step2, 3=step3, 4=step4
     stripeInstance: null,    // Stripe() instance (created in initStripeElements)
     cardElement: null        // Stripe CardElement (mounted to #card-element)
@@ -170,7 +171,9 @@
     state.currentStep = 0;
     state.quote = null;
     state.guest = { firstName: '', lastName: '', email: '', phone: '' };
-    state.selectedUpsells = [];
+    state.booking = null;
+    if (state.cardElement) { try { state.cardElement.destroy(); } catch (e) { /* ignore */ } }
+    state.cardElement = null;
     // Hide all steps
     [1, 2, 3, 4].forEach(function (n) {
       var step = el('checkout-step-' + n);
@@ -207,7 +210,7 @@
   ---------------------------------------------------------- */
   var STEP_TITLES = {
     1: 'Review Your Stay',
-    2: 'Your Details & Add-Ons',
+    2: 'Your Details',
     3: 'Complete Your Booking',
     4: 'Booking Confirmed!'
   };
@@ -243,77 +246,86 @@
     return '$' + amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   }
 
+  function formatCents(cents) {
+    var dollars = (cents || 0) / 100;
+    var whole = Math.round(dollars * 100) % 100 === 0;
+    return '$' + dollars.toLocaleString('en-US', {
+      minimumFractionDigits: whole ? 0 : 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  function formatDay(ds, opts) {
+    return new Intl.DateTimeFormat('en-US', Object.assign({ timeZone: 'UTC' }, opts))
+      .format(new Date(ds + 'T00:00:00Z'));
+  }
+
+  function paymentSentence(q) {
+    if (q.balanceCents > 0) {
+      return formatCents(q.dueTodayCents) + ' deposit today. The remaining ' + formatCents(q.balanceCents) +
+        ' is charged automatically to the same card on ' + formatDay(q.balanceDueOn, { month: 'long', day: 'numeric', year: 'numeric' }) + '.';
+    }
+    return 'The full ' + formatCents(q.totalCents) + ' is charged today (your stay starts within 14 days).';
+  }
+
   function renderStep1() {
-    if (!state.selectedRatePlan) {
+    var q = state.quote;
+    if (!q) {
       showError('Unable to load quote details.', FALLBACK_URL);
       return;
     }
-    var rp = state.selectedRatePlan;
-    var totals = rp.totals;
 
-    // Build nights breakdown
-    var dtf = new Intl.DateTimeFormat('en-US', {
-      month: 'short', day: 'numeric', weekday: 'short', timeZone: 'UTC'
-    });
     var nightsHtml = '';
-    var days = rp.days || [];
-    days.forEach(function (d) {
-      var dateStr = dtf.format(new Date(d.date));
-      nightsHtml += '<div class="quote-night-row"><span>' + dateStr + '</span><span>' + formatMoney(d.price) + '</span></div>';
+    (q.nights || []).forEach(function (n) {
+      nightsHtml += '<div class="quote-night-row"><span>' + formatDay(n.date, { weekday: 'short', month: 'short', day: 'numeric' }) +
+        '</span><span>' + formatCents(n.directCents) + '</span></div>';
     });
     el('quote-nights-breakdown').innerHTML = nightsHtml;
 
-    // Build line items
-    var nightCount = days.length;
+    var nightCount = q.nightCount;
     var lineHtml = '';
-    lineHtml += '<div class="quote-line"><span>Accommodation (' + nightCount + ' night' + (nightCount !== 1 ? 's' : '') + ')</span><span>' + formatMoney(totals.accommodation) + '</span></div>';
-    lineHtml += '<div class="quote-line"><span>Cleaning fee</span><span>' + formatMoney(totals.cleaning) + '</span></div>';
-    if (totals.fees > 0) {
-      lineHtml += '<div class="quote-line"><span>Fees</span><span>' + formatMoney(totals.fees) + '</span></div>';
+    lineHtml += '<div class="quote-line"><span>' + nightCount + ' night' + (nightCount !== 1 ? 's' : '') +
+      ' (includes ' + escapeHtml(q.directDiscountPct) + '% book-direct discount)</span><span>' + formatCents(q.directNightsCents) + '</span></div>';
+    lineHtml += '<div class="quote-line"><span>Cleaning fee</span><span>' + formatCents(q.cleaningCents) + '</span></div>';
+    lineHtml += '<div class="quote-line"><span>Lodging taxes (' + escapeHtml(q.taxRate) + '%)</span><span>' + formatCents(q.taxCents) + '</span></div>';
+    lineHtml += '<div class="quote-line is-total"><span>Total</span><span>' + formatCents(q.totalCents) + '</span></div>';
+    if (q.savingsVsOtaCents > 0) {
+      lineHtml += '<div class="quote-line quote-savings"><span>You save vs. the same stay on Airbnb</span><span>' + formatCents(q.savingsVsOtaCents) + '</span></div>';
     }
-    lineHtml += '<div class="quote-line"><span>Taxes</span><span>' + formatMoney(totals.taxes) + '</span></div>';
-    lineHtml += '<div class="quote-line is-total"><span>Total</span><span>' + formatMoney(totals.total) + '</span></div>';
     el('quote-line-items').innerHTML = lineHtml;
 
-    // Deposit notice
-    var remaining = totals.total - 50;
-    el('quote-remaining-balance').textContent = formatMoney(remaining);
+    el('checkout-deposit-text').textContent = paymentSentence(q);
+    var policy = document.querySelector('#checkout-step-1 .checkout-policy-text');
+    if (policy && q.cancellationPolicy) policy.textContent = q.cancellationPolicy;
+  }
+
+  function apiPost(path, payload) {
+    return fetch(API_BASE + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (resp) {
+      return resp.json().catch(function () { return {}; }).then(function (data) {
+        return { ok: resp.ok, status: resp.status, data: data };
+      });
+    });
+  }
+
+  function errorText(data, fallback) {
+    return (data && data.error) ? data.error : fallback;
   }
 
   function fetchQuote() {
-    var body = JSON.stringify({
-      checkIn: state.checkIn,
-      checkOut: state.checkOut,
-      guests: state.guests,
-      guest: { firstName: 'Guest', lastName: 'Guest', email: 'guest@example.com', phone: '+10000000000' }
-    });
-
-    fetch(API_BASE + '/api/quote', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: body
-    })
-      .then(function (resp) {
-        if (!resp.ok) {
-          return resp.json().catch(function () { return {}; }).then(function (data) {
-            var fallback = data.fallbackUrl || FALLBACK_URL;
-            var msg;
-            if (resp.status === 400) {
-              msg = 'These dates are not available. Please select different dates.';
-            } else {
-              msg = 'Unable to load pricing. Please try again.';
-            }
-            hideSpinner();
-            showError(msg, fallback);
-          });
+    apiPost('/quote', { checkIn: state.checkIn, checkOut: state.checkOut, guests: state.guests })
+      .then(function (res) {
+        hideSpinner();
+        if (!res.ok) {
+          showError(errorText(res.data, 'Unable to load pricing. Please try again.'), FALLBACK_URL);
+          return;
         }
-        return resp.json().then(function (data) {
-          state.quote = data;
-          state.selectedRatePlan = (data.ratePlans && data.ratePlans[0]) || null;
-          hideSpinner();
-          renderStep1();
-          el('btn-continue-to-step2').disabled = false;
-        });
+        state.quote = res.data;
+        renderStep1();
+        el('btn-continue-to-step2').disabled = false;
       })
       .catch(function () {
         hideSpinner();
@@ -394,62 +406,8 @@
 
   function enterStep2() {
     goToStep(2);
-    if (state.upsellItems.length === 0) {
-      fetchUpsells();
-    } else {
-      renderUpsells();
-    }
-  }
-
-  function fetchUpsells() {
-    showSpinner('Loading add-ons...');
-    fetch(API_BASE + '/api/upsells')
-      .then(function (resp) { return resp.json(); })
-      .then(function (data) {
-        state.upsellItems = data.items || [];
-        hideSpinner();
-        renderUpsells();
-      })
-      .catch(function () {
-        hideSpinner();
-        // Upsell failure is non-blocking
-        state.upsellItems = [];
-        renderUpsells();
-      });
-  }
-
-  function renderUpsells() {
     var upsellSection = el('checkout-upsells');
-    if (state.upsellItems.length === 0) {
-      if (upsellSection) upsellSection.style.display = 'none';
-      return;
-    }
-    if (upsellSection) upsellSection.style.display = '';
-
-    var html = '';
-    state.upsellItems.forEach(function (item) {
-      var isChecked = state.selectedUpsells.indexOf(item.id) !== -1;
-      var isSelected = isChecked ? ' is-selected' : '';
-      html += '<div class="upsell-item' + isSelected + '" data-upsell-id="' + escapeHtml(item.id) + '">';
-      html += '<input type="checkbox" id="upsell-' + escapeHtml(item.id) + '" aria-label="' + escapeHtml(item.name) + '"' + (isChecked ? ' checked' : '') + '>';
-      html += '<div>';
-      html += '<div class="upsell-item-name">' + escapeHtml(item.name) + '</div>';
-      html += '<div class="upsell-item-desc">' + escapeHtml(item.description) + '</div>';
-      html += '</div>';
-      html += '<div class="upsell-item-price">+' + formatMoney(item.price) + '</div>';
-      html += '</div>';
-    });
-    el('upsell-list').innerHTML = html;
-
-    // Attach change listeners
-    state.upsellItems.forEach(function (item) {
-      var checkbox = document.getElementById('upsell-' + item.id);
-      if (checkbox) {
-        checkbox.addEventListener('change', function () {
-          toggleUpsell(item.id, this.checked);
-        });
-      }
-    });
+    if (upsellSection) upsellSection.style.display = 'none';
   }
 
   function escapeHtml(str) {
@@ -461,60 +419,22 @@
       .replace(/'/g, '&#39;');
   }
 
-  function toggleUpsell(id, checked) {
-    var idx = state.selectedUpsells.indexOf(id);
-    if (checked && idx === -1) {
-      state.selectedUpsells.push(id);
-    } else if (!checked && idx !== -1) {
-      state.selectedUpsells.splice(idx, 1);
-    }
-    // Toggle is-selected class on parent .upsell-item div
-    var itemDiv = document.querySelector('.upsell-item[data-upsell-id="' + id + '"]');
-    if (itemDiv) {
-      if (checked) {
-        itemDiv.classList.add('is-selected');
-      } else {
-        itemDiv.classList.remove('is-selected');
-      }
-    }
-    updateUpsellTotal();
-  }
-
-  function updateUpsellTotal() {
-    var total = 0;
-    state.upsellItems.forEach(function (item) {
-      if (state.selectedUpsells.indexOf(item.id) !== -1) {
-        total += item.price;
-      }
-    });
-    var totalRow = el('upsell-total-row');
-    if (total > 0) {
-      totalRow.removeAttribute('hidden');
-      el('upsell-total-amount').textContent = formatMoney(total);
-    } else {
-      totalRow.setAttribute('hidden', '');
-    }
-  }
-
   /* ----------------------------------------------------------
      Step 3 — Stripe Elements initialization
   ---------------------------------------------------------- */
-  function initStripeElements(publishableKey, accountId) {
-    // Show elements form, hide fallback
+  function initStripeElements(publishableKey) {
     el('stripe-elements-form').removeAttribute('hidden');
     el('checkout-payment-fallback').setAttribute('hidden', '');
 
-    // Populate charge notice
-    var remaining = state.selectedRatePlan ? (state.selectedRatePlan.totals.total - 50) : 0;
-    el('co-charge-notice').textContent = 'You will be charged $50 today. Remaining ' + formatMoney(remaining) + ' will be charged 14 days before check-in.';
+    el('co-charge-notice').textContent = paymentSentence(state.quote);
+    var policyLabel = document.querySelector('label[for="co-policy-checkbox"]');
+    if (policyLabel && state.quote.cancellationPolicy) {
+      policyLabel.textContent = 'I agree to the cancellation policy: ' + state.quote.cancellationPolicy +
+        (state.quote.balanceCents > 0 ? ' I authorize the balance to be charged to this card on its due date.' : '');
+    }
 
-    // Initialize Stripe with connected account
-    // Direct Stripe account - only pass stripeAccount if using Connect
-    var stripeOpts = {};
-    if (accountId) stripeOpts.stripeAccount = accountId;
-    state.stripeInstance = Stripe(publishableKey, stripeOpts);
+    if (!state.stripeInstance) state.stripeInstance = Stripe(publishableKey);
     var elements = state.stripeInstance.elements();
-
     var cardStyle = {
       base: {
         color: '#f0ead6',
@@ -523,16 +443,12 @@
         '::placeholder': { color: '#a8a090' },
         iconColor: '#c9a96e'
       },
-      invalid: {
-        color: '#e07070',
-        iconColor: '#e07070'
-      }
+      invalid: { color: '#e07070', iconColor: '#e07070' }
     };
-
-    state.cardElement = elements.create('card', { style: cardStyle, hidePostalCode: true });
+    if (state.cardElement) { try { state.cardElement.destroy(); } catch (e) { /* ignore */ } }
+    state.cardElement = elements.create('card', { style: cardStyle });
     state.cardElement.mount('#card-element');
 
-    // Show card errors inline
     state.cardElement.on('change', function (event) {
       var errorDiv = el('card-errors');
       if (event.error) {
@@ -544,134 +460,118 @@
       }
     });
 
-    // Policy checkbox controls confirm button
     var policyCheckbox = el('co-policy-checkbox');
     var confirmBtn = el('co-confirm-btn');
     confirmBtn.disabled = true;
     policyCheckbox.checked = false;
-    policyCheckbox.addEventListener('change', function () {
-      confirmBtn.disabled = !policyCheckbox.checked;
-    });
+    policyCheckbox.onchange = function () { confirmBtn.disabled = !policyCheckbox.checked; };
   }
 
-  /* ----------------------------------------------------------
-     Step 3 — Submit payment (create PaymentMethod → call /api/book)
-  ---------------------------------------------------------- */
+  function showCardError(msg) {
+    var errorDiv = el('card-errors');
+    errorDiv.textContent = msg;
+    errorDiv.removeAttribute('hidden');
+    el('co-confirm-btn').disabled = !el('co-policy-checkbox').checked;
+  }
+
+  /* Step 3 submit: hold the dates (POST /book), then confirm the card with Stripe directly.
+     A declined card keeps the same booking + PaymentIntent so the guest can retry with another
+     card without losing the dates. */
   function submitPayment() {
     if (!state.stripeInstance || !state.cardElement) {
       showError('Payment form not ready. Please try again.', FALLBACK_URL);
       return;
     }
-
-    showSpinner('Processing payment...');
     hideError();
+    el('co-confirm-btn').disabled = true;
 
-    state.stripeInstance.createPaymentMethod({
-      type: 'card',
-      card: state.cardElement,
-      billing_details: {
-        name: state.guest.firstName + ' ' + state.guest.lastName,
-        email: state.guest.email,
-        phone: state.guest.phone
-      }
-    }).then(function (result) {
-      if (result.error) {
-        hideSpinner();
-        var errorDiv = el('card-errors');
-        errorDiv.textContent = result.error.message;
-        errorDiv.removeAttribute('hidden');
-        // Re-enable confirm button if policy still checked
-        var policyCheckbox = el('co-policy-checkbox');
-        el('co-confirm-btn').disabled = !policyCheckbox.checked;
-        return;
-      }
-
-      var pmToken = result.paymentMethod.id;
-
-      var bookBody = JSON.stringify({
-        quoteId: state.quote.quoteId,
-        ratePlanId: state.selectedRatePlan.ratePlanId,
-        ccToken: pmToken,
-        guest: state.guest,
-        upsells: state.selectedUpsells,
-        checkIn: state.checkIn,
-        checkOut: state.checkOut
-      });
-
-      fetch(API_BASE + '/api/book', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: bookBody
-      })
-        .then(function (resp) {
-          return resp.json().then(function (data) {
-            return { ok: resp.ok, status: resp.status, data: data };
-          });
-        })
-        .then(function (res) {
-          hideSpinner();
-          if (!res.ok) {
-            var msg = (res.data && res.data.error)
-              ? res.data.error
-              : 'Booking failed. Please try again or use the partner portal.';
-            showError(msg, (res.data && res.data.fallbackUrl) || FALLBACK_URL);
-            // Reset card element — token is single-use
-            if (state.cardElement) state.cardElement.clear();
-            el('co-confirm-btn').disabled = true;
-            el('co-policy-checkbox').checked = false;
-            return;
+    var ready = state.booking ? Promise.resolve(state.booking) : startBooking();
+    ready.then(function (booking) {
+      if (!booking) return;
+      showSpinner('Processing payment...');
+      return state.stripeInstance.confirmCardPayment(booking.clientSecret, {
+        payment_method: {
+          card: state.cardElement,
+          billing_details: {
+            name: state.guest.firstName + ' ' + state.guest.lastName,
+            email: state.guest.email,
+            phone: state.guest.phone
           }
-          renderStep4(res.data);
+        }
+      }).then(function (result) {
+        hideSpinner();
+        if (result.error) {
+          showCardError(result.error.message || 'Your card was declined. Please try another card.');
+          return;
+        }
+        var status = result.paymentIntent && result.paymentIntent.status;
+        if (status === 'succeeded' || status === 'processing') {
+          renderStep4(booking);
           goToStep(4);
-        })
-        .catch(function () {
-          hideSpinner();
-          showError('Connection error during booking. Please try again.', FALLBACK_URL);
-          if (state.cardElement) state.cardElement.clear();
-          el('co-confirm-btn').disabled = true;
-          el('co-policy-checkbox').checked = false;
-        });
+        } else {
+          showCardError('Your payment needs another step. Please try again or use a different card.');
+        }
+      });
+    }).catch(function () {
+      hideSpinner();
+      showError('Connection error during booking. Your card was not charged. Please try again.', FALLBACK_URL);
+      el('co-confirm-btn').disabled = !el('co-policy-checkbox').checked;
     });
   }
 
-  /* ----------------------------------------------------------
-     Step 4 — Render confirmation screen
-  ---------------------------------------------------------- */
-  function renderStep4(bookingData) {
-    el('co-confirmation-code').textContent = bookingData.confirmationCode || '—';
+  function startBooking() {
+    showSpinner('Holding your dates...');
+    return apiPost('/book', {
+      checkIn: state.checkIn,
+      checkOut: state.checkOut,
+      guests: state.guests,
+      guest: state.guest,
+      expectedTotalCents: state.quote.totalCents,
+      agreeToPolicy: el('co-policy-checkbox').checked
+    }).then(function (res) {
+      hideSpinner();
+      if (res.ok) {
+        state.booking = res.data;
+        return res.data;
+      }
+      var code = res.data && res.data.code;
+      if (code === 'PRICE_CHANGED' && res.data.quote) {
+        state.quote = res.data.quote;
+        renderStep1();
+        goToStep(1);
+        showError(errorText(res.data, 'The price changed. Please review the new total.'), FALLBACK_URL);
+        return null;
+      }
+      if (code === 'BAD_GUEST') {
+        goToStep(2);
+      }
+      showError(errorText(res.data, 'We could not start your booking. Please try again or email us.'), FALLBACK_URL);
+      el('co-confirm-btn').disabled = !el('co-policy-checkbox').checked;
+      return null;
+    });
+  }
 
+  function renderStep4(booking) {
+    el('co-confirmation-code').textContent = booking.confirmationCode || '—';
     el('co-confirmation-email-notice').textContent =
-      'A confirmation email has been sent to ' + escapeHtml(state.guest.email) + '.';
+      'Your payment receipt is on its way to ' + state.guest.email +
+      '. We will follow up by email with check-in details before your stay.';
 
-    // Details block: property, guest, dates
-    var dtf = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
     var detailsHtml = '';
     detailsHtml += '<div><strong>Property:</strong> Sunshine Canyon Retreat</div>';
     detailsHtml += '<div><strong>Guest:</strong> ' + escapeHtml(state.guest.firstName) + ' ' + escapeHtml(state.guest.lastName) + '</div>';
-    detailsHtml += '<div><strong>Check-in:</strong> ' + dtf.format(new Date(state.checkIn)) + '</div>';
-    detailsHtml += '<div><strong>Check-out:</strong> ' + dtf.format(new Date(state.checkOut)) + '</div>';
-    el('co-confirmation-details').innerHTML = detailsHtml;
-
-    // Upsells block
-    var selectedUpsellItems = state.upsellItems.filter(function (item) {
-      return state.selectedUpsells.indexOf(item.id) !== -1;
-    });
-    if (selectedUpsellItems.length > 0) {
-      var upsellHtml = '<div style="font-weight:600;margin-bottom:8px;color:var(--co-text)">Add-Ons Selected</div>';
-      selectedUpsellItems.forEach(function (item) {
-        upsellHtml += '<div class="co-confirmation-upsell-row"><span>' + escapeHtml(item.name) + '</span><span>' + formatMoney(item.price) + '</span></div>';
-      });
-      el('co-confirmation-upsells').innerHTML = upsellHtml;
-      el('co-confirmation-upsells').removeAttribute('hidden');
-    } else {
-      el('co-confirmation-upsells').setAttribute('hidden', '');
+    detailsHtml += '<div><strong>Check-in:</strong> ' + formatDay(state.checkIn, { month: 'long', day: 'numeric', year: 'numeric' }) + '</div>';
+    detailsHtml += '<div><strong>Check-out:</strong> ' + formatDay(state.checkOut, { month: 'long', day: 'numeric', year: 'numeric' }) + '</div>';
+    detailsHtml += '<div><strong>Paid today:</strong> ' + formatCents(booking.dueTodayCents) + '</div>';
+    if (booking.balanceCents > 0) {
+      detailsHtml += '<div><strong>Balance:</strong> ' + formatCents(booking.balanceCents) + ' on ' +
+        formatDay(booking.balanceDueOn, { month: 'long', day: 'numeric', year: 'numeric' }) + '</div>';
     }
-
-    // Total
-    if (state.selectedRatePlan && state.selectedRatePlan.totals) {
-      var upsellTotal = selectedUpsellItems.reduce(function (sum, item) { return sum + item.price; }, 0);
-      var grandTotal = state.selectedRatePlan.totals.total + upsellTotal;
-      el('co-confirmation-total').textContent = 'Total: ' + formatMoney(grandTotal);
+    el('co-confirmation-details').innerHTML = detailsHtml;
+    el('co-confirmation-upsells').setAttribute('hidden', '');
+    el('co-confirmation-total').textContent = 'Total: ' + formatCents(booking.totalCents);
+    if (booking.mode === 'test') {
+      el('co-confirmation-total').textContent += ' (TEST MODE: no real charge)';
     }
   }
 
@@ -741,20 +641,21 @@
      Payment info check — Step 3
   ---------------------------------------------------------- */
   function checkPaymentInfo() {
-    fetch(API_BASE + '/api/payment-info')
+    fetch(API_BASE + '/config')
       .then(function (resp) { return resp.json(); })
       .then(function (data) {
-        state.paymentInfo = data;
+        state.config = data;
         hideSpinner();
+        el('btn-continue-to-payment').disabled = false;
         goToStep(3);
-        if (data.stripePublishableKey === null) {
+        if (!data.bookingOpen || !data.publishableKey) {
+          el('stripe-elements-form').setAttribute('hidden', '');
           el('checkout-payment-fallback').removeAttribute('hidden');
-          el('btn-fallback-portal').href = data.fallbackUrl || FALLBACK_URL;
-          el('checkout-step-indicator').textContent = 'Fallback Mode';
-          el('checkout-title').textContent = 'Complete Your Booking';
+          el('btn-fallback-portal').href = FALLBACK_URL;
+          el('checkout-title').textContent = 'Reserve by Email';
         } else {
           el('checkout-payment-fallback').setAttribute('hidden', '');
-          initStripeElements(data.stripePublishableKey, data.stripeAccountId);
+          initStripeElements(data.publishableKey);
         }
       })
       .catch(function () {
@@ -823,7 +724,7 @@
         var checkOut = window.selectedCheckOut || null;
         var guests = window.selectedGuests || 2;
         if (!checkIn || !checkOut) {
-          // Sebastian UX fix: instead of a blocking browser alert, smooth-scroll
+          // UX: instead of a blocking browser alert, smooth-scroll
           // the user down to the date picker module and pop the check-in
           // calendar open so they land exactly where they need to act.
           var target = document.getElementById('price-widget');
