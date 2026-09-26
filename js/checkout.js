@@ -724,7 +724,7 @@
         var checkOut = window.selectedCheckOut || null;
         var guests = window.selectedGuests || 2;
         if (!checkIn || !checkOut) {
-          // Sebastian UX fix: instead of a blocking browser alert, smooth-scroll
+          // UX: instead of a blocking browser alert, smooth-scroll
           // the user down to the date picker module and pop the check-in
           // calendar open so they land exactly where they need to act.
           var target = document.getElementById('price-widget');
