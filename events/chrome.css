@@ -1,0 +1,20 @@
+/* Shared header, CTA and footer for pages under /events/. Edit here once; every events page links this file. */
+.sc-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:0 0 18px;margin:0 0 36px;border-bottom:1px solid var(--stone-200,#e7e5e4)}
+.sc-nav-logo{font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:500;color:var(--pine,#2d4a3e);text-decoration:none}
+.sc-nav-links{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.sc-nav-links a{font-size:.9rem;color:var(--stone-700,#44403c);text-decoration:none}
+.sc-nav-links a:hover,.sc-nav-links a:focus-visible{color:var(--pine,#2d4a3e);text-decoration:underline}
+.sc-nav-links a.sc-book{background:var(--pine,#2d4a3e);color:#fff;padding:8px 16px;border-radius:4px;font-weight:500}
+.sc-nav-links a.sc-book:hover,.sc-nav-links a.sc-book:focus-visible{background:#1f352c;color:#fff;text-decoration:none}
+.sc-cta{margin:48px 0 8px;padding:28px 24px;background:var(--stone-100,#f5f5f4);border-left:3px solid var(--gold,#b8860b);border-radius:4px}
+.sc-cta h2{margin:0 0 8px}
+.sc-cta p{margin-bottom:16px}
+.sc-cta a.sc-book{display:inline-block;background:var(--pine,#2d4a3e);color:#fff;padding:12px 22px;border-radius:4px;text-decoration:none;font-weight:500}
+.sc-cta a.sc-book:hover,.sc-cta a.sc-book:focus-visible{background:#1f352c}
+.sc-footer{margin-top:56px;padding-top:24px;border-top:1px solid var(--stone-200,#e7e5e4);display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;font-size:.85rem;color:var(--stone-500,#78716c)}
+.sc-footer-brand{font-family:'Cormorant Garamond',serif;font-size:1.15rem;color:var(--pine,#2d4a3e)}
+.sc-footer-links,.sc-footer-legal{display:flex;gap:14px;flex-wrap:wrap}
+.sc-footer-legal{margin-top:8px}
+.sc-footer a{color:var(--stone-700,#44403c)}
+.sc-nav a:focus-visible,.sc-cta a:focus-visible,.sc-footer a:focus-visible{outline:2px solid var(--gold,#b8860b);outline-offset:2px}
+@media (max-width:560px){.sc-nav-links{gap:14px}.sc-footer{flex-direction:column}}
