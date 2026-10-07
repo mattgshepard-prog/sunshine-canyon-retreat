@@ -34,6 +34,7 @@
     checkIn: null,           // YYYY-MM-DD
     checkOut: null,          // YYYY-MM-DD
     guests: 2,               // integer
+    offer: null,             // private booking link code for THIS checkout, or null (public price)
     quote: null,             // /direct/sunshine/quote response (all amounts in cents)
     config: null,            // /direct/sunshine/config response
     booking: null,           // /direct/sunshine/book response (clientSecret, confirmationCode)
@@ -47,6 +48,83 @@
     stripeInstance: null,    // Stripe() instance (created in initStripeElements)
     cardElement: null        // Stripe CardElement (mounted to #card-element)
   };
+
+  /* ----------------------------------------------------------
+     Private booking link (OFFER-01)
+     A link like /?offer=CODE#book opens the checkout on one stay at a price we set for
+     that guest. The code is only ever sent to our own API, which decides what it opens:
+     the dates, the price and whether the link is still good all come from the server.
+     pageOffer is the link this page was opened with, once the server has confirmed it.
+  ---------------------------------------------------------- */
+  var pageOffer = null;      // { code, checkIn, checkOut, guests } or null
+
+  function offerCodeFromUrl() {
+    try {
+      var code = new URLSearchParams(window.location.search).get('offer');
+      return code ? code.trim() : '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  // The stay fields every quote/book call sends. The offer code rides along only when this
+  // checkout was opened from a private link.
+  function stayPayload() {
+    var payload = { checkIn: state.checkIn, checkOut: state.checkOut, guests: state.guests };
+    if (state.offer) payload.offer = state.offer;
+    return payload;
+  }
+
+  function openPageOffer() {
+    window.checkoutOpen({
+      checkIn: pageOffer.checkIn,
+      checkOut: pageOffer.checkOut,
+      guests: pageOffer.guests,
+      offer: pageOffer.code
+    });
+  }
+
+  // A link that opens nothing (used, expired, mistyped): say so in the drawer, with the way
+  // to reach us, instead of dropping the guest on the public calendar with no explanation.
+  function showOfferProblem(msg) {
+    openDrawer();
+    goToStep(1);
+    el('quote-nights-breakdown').innerHTML = '';
+    el('quote-line-items').innerHTML = '';
+    el('btn-continue-to-step2').disabled = true;
+    showError(msg, FALLBACK_URL);
+  }
+
+  function loadPageOffer() {
+    var code = offerCodeFromUrl();
+    if (!code) return;
+    if (BOOKING_DISABLED) {
+      showMaintenanceModal();
+      return;
+    }
+    fetch(API_BASE + '/offer/' + encodeURIComponent(code))
+      .then(function (resp) {
+        return resp.json().catch(function () { return {}; }).then(function (data) {
+          return { ok: resp.ok, data: data };
+        });
+      })
+      .then(function (res) {
+        if (!res.ok || !res.data || !res.data.checkIn || !res.data.checkOut) {
+          showOfferProblem(errorText(res.data, 'This booking link could not be opened. Please email us.'));
+          return;
+        }
+        pageOffer = {
+          code: code,
+          checkIn: res.data.checkIn,
+          checkOut: res.data.checkOut,
+          guests: res.data.guests || 2
+        };
+        openPageOffer();
+      })
+      .catch(function () {
+        showOfferProblem('We could not load your booking link. Please check your connection and reload the page.');
+      });
+  }
 
   /* ----------------------------------------------------------
      DOM helper
@@ -284,8 +362,10 @@
 
     var nightCount = q.nightCount;
     var lineHtml = '';
+    // A private link carries its own price, so there is no book-direct percentage to quote.
+    var nightsNote = q.offer ? ' (your private rate)' : ' (includes ' + escapeHtml(q.directDiscountPct) + '% book-direct discount)';
     lineHtml += '<div class="quote-line"><span>' + nightCount + ' night' + (nightCount !== 1 ? 's' : '') +
-      ' (includes ' + escapeHtml(q.directDiscountPct) + '% book-direct discount)</span><span>' + formatCents(q.directNightsCents) + '</span></div>';
+      nightsNote + '</span><span>' + formatCents(q.directNightsCents) + '</span></div>';
     lineHtml += '<div class="quote-line"><span>Cleaning fee</span><span>' + formatCents(q.cleaningCents) + '</span></div>';
     lineHtml += '<div class="quote-line"><span>Lodging taxes (' + escapeHtml(q.taxRate) + '%)</span><span>' + formatCents(q.taxCents) + '</span></div>';
     lineHtml += '<div class="quote-line is-total"><span>Total</span><span>' + formatCents(q.totalCents) + '</span></div>';
@@ -316,7 +396,7 @@
   }
 
   function fetchQuote() {
-    apiPost('/quote', { checkIn: state.checkIn, checkOut: state.checkOut, guests: state.guests })
+    apiPost('/quote', stayPayload())
       .then(function (res) {
         hideSpinner();
         if (!res.ok) {
@@ -377,7 +457,7 @@
   /* ----------------------------------------------------------
      Public API
   ---------------------------------------------------------- */
-  window.checkoutOpen = async function ({ checkIn, checkOut, guests = 2 }) {
+  window.checkoutOpen = async function ({ checkIn, checkOut, guests = 2, offer = null }) {
     // BOOKING KILL SWITCH — show maintenance modal
     if (BOOKING_DISABLED) {
       showMaintenanceModal();
@@ -391,6 +471,9 @@
     state.checkIn = checkIn;
     state.checkOut = checkOut;
     state.guests = guests;
+    // Set on every open, so a checkout started from the public calendar never carries a
+    // private link's code, and the reverse.
+    state.offer = offer || null;
 
     openDrawer();
     goToStep(1);
@@ -506,6 +589,8 @@
         }
         var status = result.paymentIntent && result.paymentIntent.status;
         if (status === 'succeeded' || status === 'processing') {
+          // The link is single use and has just been used: the page goes back to normal.
+          if (state.offer) pageOffer = null;
           renderStep4(booking);
           goToStep(4);
         } else {
@@ -521,14 +606,11 @@
 
   function startBooking() {
     showSpinner('Holding your dates...');
-    return apiPost('/book', {
-      checkIn: state.checkIn,
-      checkOut: state.checkOut,
-      guests: state.guests,
-      guest: state.guest,
-      expectedTotalCents: state.quote.totalCents,
-      agreeToPolicy: el('co-policy-checkbox').checked
-    }).then(function (res) {
+    var payload = stayPayload();
+    payload.guest = state.guest;
+    payload.expectedTotalCents = state.quote.totalCents;
+    payload.agreeToPolicy = el('co-policy-checkbox').checked;
+    return apiPost('/book', payload).then(function (res) {
       hideSpinner();
       if (res.ok) {
         state.booking = res.data;
@@ -719,6 +801,11 @@
           showMaintenanceModal();
           return;
         }
+        // Opened from a private booking link: every Book button reopens that guest's stay.
+        if (pageOffer) {
+          openPageOffer();
+          return;
+        }
         // The existing site stores dates in window.selectedCheckIn / window.selectedCheckOut
         var checkIn = window.selectedCheckIn || null;
         var checkOut = window.selectedCheckOut || null;
@@ -746,6 +833,10 @@
         window.checkoutOpen({ checkIn: checkIn, checkOut: checkOut, guests: guests });
       });
     });
+
+    // Last, once the drawer is wired: open the checkout if this page was reached by a
+    // private booking link.
+    loadPageOffer();
   });
 
 })();
