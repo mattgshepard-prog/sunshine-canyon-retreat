@@ -52,19 +52,36 @@
   /* ----------------------------------------------------------
      Private booking link (OFFER-01)
      A link like /?offer=CODE#book opens the checkout on one stay at a price we set for
-     that guest. The code is only ever sent to our own API, which decides what it opens:
-     the dates, the price and whether the link is still good all come from the server.
-     pageOffer is the link this page was opened with, once the server has confirmed it.
+     that guest. The code is only ever sent to our own API, in a request body, and the API
+     decides what it opens: the dates, the price and whether the link is still good all
+     come from the server. pageOffer is the link this page was opened with, once the
+     server has confirmed it.
+
+     The inline script at the top of index.html has already moved the code out of the
+     address bar (so it is not recorded with the page URL) and stashed it for this tab.
   ---------------------------------------------------------- */
   var pageOffer = null;      // { code, checkIn, checkOut, guests } or null
+  var OFFER_STASH_KEY = 'scrOffer';
 
-  function offerCodeFromUrl() {
-    try {
-      var code = new URLSearchParams(window.location.search).get('offer');
-      return code ? code.trim() : '';
-    } catch (e) {
-      return '';
+  function offerCode() {
+    var code = '';
+    try { code = window.__scrOffer || ''; } catch (e) { /* ignore */ }
+    if (!code) {
+      try { code = sessionStorage.getItem(OFFER_STASH_KEY) || ''; } catch (e) { /* ignore */ }
     }
+    if (!code) {
+      // Fallback for a page served without the inline script.
+      try { code = new URLSearchParams(window.location.search).get('offer') || ''; } catch (e) { /* ignore */ }
+    }
+    return String(code).trim();
+  }
+
+  // The link is finished with (used, expired, withdrawn): the page goes back to normal
+  // and a reload does not bring the dead link up again.
+  function forgetOffer() {
+    pageOffer = null;
+    try { window.__scrOffer = ''; } catch (e) { /* ignore */ }
+    try { sessionStorage.removeItem(OFFER_STASH_KEY); } catch (e) { /* ignore */ }
   }
 
   // The stay fields every quote/book call sends. The offer code rides along only when this
@@ -96,20 +113,18 @@
   }
 
   function loadPageOffer() {
-    var code = offerCodeFromUrl();
+    var code = offerCode();
     if (!code) return;
     if (BOOKING_DISABLED) {
       showMaintenanceModal();
       return;
     }
-    fetch(API_BASE + '/offer/' + encodeURIComponent(code))
-      .then(function (resp) {
-        return resp.json().catch(function () { return {}; }).then(function (data) {
-          return { ok: resp.ok, data: data };
-        });
-      })
+    apiPost('/offer', { offer: code })
       .then(function (res) {
         if (!res.ok || !res.data || !res.data.checkIn || !res.data.checkOut) {
+          // 404/410 is the server saying this link is finished. Anything else (a 5xx, a
+          // deploy in progress) may clear up, so the link is kept for the next reload.
+          if (res.status === 404 || res.status === 410) forgetOffer();
           showOfferProblem(errorText(res.data, 'This booking link could not be opened. Please email us.'));
           return;
         }
@@ -590,7 +605,7 @@
         var status = result.paymentIntent && result.paymentIntent.status;
         if (status === 'succeeded' || status === 'processing') {
           // The link is single use and has just been used: the page goes back to normal.
-          if (state.offer) pageOffer = null;
+          if (state.offer) forgetOffer();
           renderStep4(booking);
           goToStep(4);
         } else {

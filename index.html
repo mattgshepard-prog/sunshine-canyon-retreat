@@ -1,6 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Private booking link: a link like /?offer=CODE#book carries a single-use code. Take it
+     out of the address bar before anything else on the page (analytics included) reads the
+     URL, and keep it for this tab so a reload mid-checkout still opens the same stay.
+     js/checkout.js picks it up. Must stay ABOVE the Google tag. -->
+<script>
+(function () {
+  try {
+    var url = new URL(window.location.href);
+    var code = url.searchParams.get('offer');
+    if (!code) return;
+    window.__scrOffer = code;
+    try { sessionStorage.setItem('scrOffer', code); } catch (e) { /* storage blocked: this page load only */ }
+    url.searchParams.delete('offer');
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
+  } catch (e) { /* leave the URL alone; checkout.js falls back to reading it */ }
+})();
+</script>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z0DYZXTVM4"></script>
 <script>
