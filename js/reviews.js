@@ -20,6 +20,8 @@
   var MAX_BODY = 3000;
   var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
     'September', 'October', 'November', 'December'];
+  // The same rule the server applies: letters, with spaces, a period, a hyphen or an apostrophe.
+  var NAME_OK = /^\p{L}(?:\p{L}|[ .'\-])*$/u;
   var SOURCES = {
     airbnb: 'Reviewed on Airbnb',
     vrbo: 'Reviewed on Vrbo',
@@ -49,14 +51,15 @@
     var max = Number(review.ratingMax) === 10 ? 10 : 5;
     var rating = Number(review.rating);
     var wrap = el('span');
-    if (max === 5) {
-      var whole = Math.max(0, Math.min(5, Math.round(rating)));
+    if (max === 5 && rating === Math.floor(rating)) {
+      // Stars only for a whole rating. A 4.5 drawn as five gold stars would overstate it.
+      var whole = Math.max(0, Math.min(5, rating));
       var stars = el('span', 'review-stars', '★'.repeat(whole) + '☆'.repeat(5 - whole));
       stars.setAttribute('aria-hidden', 'true');
       wrap.appendChild(stars);
       wrap.appendChild(el('span', 'sr-only', rating + ' out of 5 stars'));
     } else {
-      wrap.appendChild(el('span', 'review-score', rating + ' out of 10'));
+      wrap.appendChild(el('span', 'review-score', rating + ' out of ' + max));
     }
     return wrap;
   }
@@ -86,10 +89,24 @@
     return card;
   }
 
+  // A request that never answers must not leave the page saying "Loading" forever.
+  var TIMEOUT_MS = 15000;
+
+  function timedFetch(url, options) {
+    if (typeof AbortController === 'undefined') return fetch(url, options);
+    var controller = new AbortController();
+    var timer = setTimeout(function () { controller.abort(); }, TIMEOUT_MS);
+    var opts = Object.assign({}, options || {}, { signal: controller.signal });
+    return fetch(url, opts).then(
+      function (r) { clearTimeout(timer); return r; },
+      function (e) { clearTimeout(timer); throw e; }
+    );
+  }
+
   function loadReviews() {
     var status = $('reviewsStatus');
     var list = $('reviewsList');
-    fetch(API_BASE + '/reviews', { headers: { Accept: 'application/json' } })
+    timedFetch(API_BASE + '/reviews', { headers: { Accept: 'application/json' } })
       .then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
@@ -127,7 +144,7 @@
   }
 
   function post(path, payload) {
-    return fetch(API_BASE + path, {
+    return timedFetch(API_BASE + path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -140,9 +157,10 @@
 
   function showNotice(lines, focus) {
     var box = $('reviewNotice');
+    // Shown first, filled second: a live region filled while hidden is not announced.
+    box.hidden = false;
     box.textContent = '';
     lines.forEach(function (line) { box.appendChild(el('p', null, line)); });
-    box.hidden = false;
     if (focus) box.focus();
   }
 
@@ -155,13 +173,18 @@
     node.textContent = message || '';
     node.hidden = !message;
     if (input) {
+      // aria-describedby rather than aria-errormessage: screen readers support it far better.
+      var described = (input.getAttribute('aria-describedby') || '').split(/\s+/).filter(function (x) {
+        return x && x !== id;
+      });
       if (message) {
         input.setAttribute('aria-invalid', 'true');
-        input.setAttribute('aria-errormessage', id);
+        described.push(id);
       } else {
         input.removeAttribute('aria-invalid');
-        input.removeAttribute('aria-errormessage');
       }
+      if (described.length) input.setAttribute('aria-describedby', described.join(' '));
+      else input.removeAttribute('aria-describedby');
     }
   }
 
@@ -197,6 +220,8 @@
       var firstBad = null;
 
       setError('ratingError', null, rating ? '' : 'Please choose a rating.');
+      if (rating) $('ratingField').removeAttribute('aria-invalid');
+      else $('ratingField').setAttribute('aria-invalid', 'true');
       if (!rating) firstBad = firstBad || form.querySelector('input[name="rating"]');
 
       var bodyMessage = '';
@@ -204,6 +229,13 @@
       else if (text.length > MAX_BODY) bodyMessage = 'Please keep your review under ' + MAX_BODY + ' characters.';
       setError('bodyError', body, bodyMessage);
       if (bodyMessage) firstBad = firstBad || body;
+
+      var shownName = name.value.replace(/\s+/g, ' ').trim();
+      var nameMessage = '';
+      if (!shownName) nameMessage = 'Please enter the name to show with your review.';
+      else if (!NAME_OK.test(shownName)) nameMessage = 'Please use letters only for the name, for example your first name.';
+      setError('nameError', name, nameMessage);
+      if (nameMessage) firstBad = firstBad || name;
 
       setError('consentError', consent, consent.checked ? '' : 'Please tick the box so we can show your review.');
       if (!consent.checked) firstBad = firstBad || consent;
@@ -221,7 +253,7 @@
         rating: parseInt(rating.value, 10),
         title: $('reviewTitle').value,
         body: text,
-        name: name.value,
+        name: shownName,
         consent: true
       }).then(function (res) {
         if (res.ok) {
@@ -229,7 +261,7 @@
           section.hidden = true;
           showNotice([
             'Thank you. Your review has been sent to our team.',
-            'It will appear on this page once it has been checked, exactly as you wrote it.'
+            'Reviews are checked before they appear on this page, and they are never edited.'
           ], true);
           return;
         }
@@ -243,6 +275,7 @@
           return;
         }
         if (codeName === 'RATING_REQUIRED') setError('ratingError', null, message);
+        else if (codeName === 'NAME_REQUIRED') setError('nameError', name, message);
         else if (codeName === 'REVIEW_TOO_SHORT' || codeName === 'REVIEW_TOO_LONG') setError('bodyError', body, message);
         else if (codeName === 'CONSENT_REQUIRED') setError('consentError', consent, message);
         status.textContent = message;
@@ -261,9 +294,18 @@
         openForm(code, res.data);
         return;
       }
-      forgetCode();
-      var message = (res.data && res.data.error) || 'This review link could not be opened.';
-      showNotice([message, contactLine()], false);
+      var codeName = res.data && res.data.code;
+      if (codeName === 'INVITE_INVALID' || codeName === 'INVITE_USED' || codeName === 'INVITE_EXPIRED') {
+        // The link itself is finished. Only then is the code dropped.
+        forgetCode();
+        showNotice([res.data.error || 'This review link could not be opened.', contactLine()], false);
+        return;
+      }
+      // Anything else is our side having a bad moment. Keep the code so a reload works.
+      showNotice([
+        'Your review link could not be checked right now. Please reload the page in a few minutes.',
+        contactLine()
+      ], false);
     }).catch(function () {
       showNotice([
         'Your review link could not be checked right now. Please reload the page in a few minutes.',

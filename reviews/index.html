@@ -65,13 +65,14 @@ a{color:var(--pine);text-decoration:underline;text-underline-offset:2px}
 .review-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:6px}
 .review-stars{color:var(--gold);font-size:1.05rem;letter-spacing:.08em;white-space:nowrap}
 .review-score{font-weight:600;color:var(--stone-700)}
+.review-name,.review-title{overflow-wrap:anywhere}
 .review-name{font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--pine);font-weight:500}
 .review-meta{font-size:.85rem;color:var(--stone-500)}
 .review-source{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--gold-text);font-weight:600}
 .review-title{font-weight:600;margin-bottom:6px}
 .review-body{white-space:pre-line;margin:8px 0 0;overflow-wrap:anywhere}
 .review-response{margin:14px 0 0;padding:12px 16px;background:var(--stone-100);border-left:3px solid var(--stone-200);border-radius:4px;font-size:.95rem}
-.review-response-label{font-size:.8rem;font-weight:600;color:var(--stone-500);margin-bottom:4px}
+.review-response-label{font-size:.8rem;font-weight:600;color:var(--stone-700);margin-bottom:4px}
 .review-response p{white-space:pre-line;margin:0;overflow-wrap:anywhere}
 .notice{padding:16px 20px;background:var(--stone-100);border-left:3px solid var(--gold);border-radius:4px;margin:24px 0}
 .notice p:last-child{margin-bottom:0}
@@ -82,12 +83,12 @@ a{color:var(--pine);text-decoration:underline;text-underline-offset:2px}
 .field{margin-bottom:20px}
 .field label,.field legend{display:block;font-weight:600;font-size:.95rem;margin-bottom:6px;color:var(--stone-900)}
 .field .hint{font-size:.85rem;color:var(--stone-500);margin:0 0 6px}
-.field input[type=text],.field textarea{width:100%;padding:12px;font:inherit;border:1px solid #a8a29e;border-radius:6px;background:#fff;color:var(--stone-900)}
+.field input[type=text],.field textarea{width:100%;padding:12px;font:inherit;border:1px solid var(--stone-500);border-radius:6px;background:#fff;color:var(--stone-900)}
 .field textarea{min-height:170px;resize:vertical}
 .field input[aria-invalid=true],.field textarea[aria-invalid=true]{border-color:var(--error)}
 fieldset.field{border:0}
 .stars-choice{display:flex;flex-wrap:wrap;gap:8px}
-.stars-choice label{display:inline-flex;align-items:center;gap:8px;font-weight:500;margin:0;padding:10px 14px;border:1px solid #a8a29e;border-radius:6px;cursor:pointer;background:#fff}
+.stars-choice label{display:inline-flex;align-items:center;gap:8px;font-weight:500;margin:0;padding:10px 14px;border:1px solid var(--stone-500);border-radius:6px;cursor:pointer;background:#fff}
 .stars-choice input{accent-color:var(--pine);width:18px;height:18px}
 .stars-choice label:has(input:checked){border-color:var(--pine);background:var(--stone-100)}
 .consent{display:flex;gap:12px;align-items:flex-start}
@@ -129,7 +130,7 @@ fieldset.field{border:0}
   <h2 id="reviewFormHeading" tabindex="-1">Leave your review</h2>
   <p id="reviewFormIntro">Thank you for staying with us. Tell future guests how it went.</p>
   <form id="reviewForm" novalidate>
-    <fieldset class="field" id="ratingField">
+    <fieldset class="field" id="ratingField" aria-describedby="ratingError">
       <legend>Your rating <span class="sr-only">(required)</span></legend>
       <div class="stars-choice">
         <label><input type="radio" name="rating" value="5" required> 5 stars</label>
@@ -152,14 +153,15 @@ fieldset.field{border:0}
       <p class="error" id="bodyError" role="alert" hidden></p>
     </div>
     <div class="field">
-      <label for="reviewName">The name to show with your review</label>
-      <p class="hint" id="reviewNameHint">A first name is plenty. Your email and phone number are never shown.</p>
-      <input type="text" id="reviewName" name="name" maxlength="40" autocomplete="given-name" aria-describedby="reviewNameHint">
+      <label for="reviewName">The name to show with your review <span class="sr-only">(required)</span></label>
+      <p class="hint" id="reviewNameHint">A first name is plenty, letters only. Your email and phone number are never shown.</p>
+      <input type="text" id="reviewName" name="name" required maxlength="40" autocomplete="given-name" aria-describedby="reviewNameHint">
+      <p class="error" id="nameError" role="alert" hidden></p>
     </div>
     <div class="field">
       <div class="consent">
         <input type="checkbox" id="reviewConsent" name="consent" required>
-        <label for="reviewConsent">I stayed at Sunshine Canyon Retreat, and I agree that this review and the name above can be shown on this website. <a href="/privacy-policy.html">Privacy Policy</a></label>
+        <label for="reviewConsent">I stayed at Sunshine Canyon Retreat, and I agree that this review, the name above and the month of my stay can be shown on this website. <a href="/privacy-policy.html">Privacy Policy</a></label>
       </div>
       <p class="error" id="consentError" role="alert" hidden></p>
     </div>
@@ -199,6 +201,6 @@ fieldset.field{border:0}
 <!-- SHARED-CHROME: footer END -->
 <footer class="fine" style="margin-top:24px">Professionally managed by <a href="mailto:amspropertymgt@gmail.com">AMS Property Management</a> &middot; &copy; 2026 Sunshine Canyon Retreat</footer>
 </div>
-<script src="/js/reviews.js?v=20261007a"></script>
+<script src="/js/reviews.js?v=20261007b"></script>
 </body>
 </html>

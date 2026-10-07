@@ -143,7 +143,7 @@ footer{max-width:100%;background:var(--stone-900);padding:60px 40px}
 .footer-inner{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:40px}
 .footer-brand{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.2rem;color:var(--snow);margin-bottom:12px}
 .footer-address{font-size:.82rem;color:var(--stone-500);line-height:1.7}
-.footer-links{display:flex;gap:24px}
+.footer-links{display:flex;flex-wrap:wrap;gap:12px 24px}
 .footer-links a{font-size:.82rem;color:var(--stone-500);text-decoration:none;transition:color .3s ease}
 .footer-links a:hover{color:var(--gold-light)}
 .footer-managed{font-size:.75rem;color:var(--stone-600);margin-top:40px;padding-top:24px;border-top:1px solid var(--stone-800);text-align:center;width:100%}
@@ -157,6 +157,13 @@ footer{max-width:100%;background:var(--stone-900);padding:60px 40px}
 .menu-toggle span{display:block;width:24px;height:2px;background:var(--snow);margin:5px 0;transition:all .3s ease}
 nav#mainNav.scrolled .menu-toggle span{background:var(--stone-800)}
 
+/* Eight menu items: keep the desktop menu on one row down to the mobile breakpoint. */
+.nav-links a,.nav-logo{white-space:nowrap}
+@media(min-width:901px) and (max-width:1160px){
+  nav#mainNav,nav#mainNav.scrolled{padding-left:24px;padding-right:24px}
+  .nav-links{gap:18px}
+  .nav-links a{font-size:.8rem;letter-spacing:.02em}
+}
 @media(max-width:900px){
   .menu-toggle{display:block}
   .nav-links{position:fixed;top:0;right:-100%;width:280px;height:100vh;background:var(--stone-900);flex-direction:column;justify-content:center;padding:40px;transition:right .4s ease}
