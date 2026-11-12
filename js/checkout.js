@@ -28,6 +28,29 @@
   const DISABLED_CONTACT = CONTACT_EMAIL;
 
   /* ----------------------------------------------------------
+     GA4 booking funnel events (added 2026-11-12, v1)
+     compare_prices > begin_checkout > guest_details >
+     add_payment_info > purchase (key event).
+     Set TRACKING_ENABLED = false to turn all of these off.
+  ---------------------------------------------------------- */
+  const TRACKING_ENABLED = true;
+  function track(name, params) {
+    if (!TRACKING_ENABLED) return;
+    try {
+      if (typeof window.gtag === 'function') window.gtag('event', name, params || {});
+    } catch (e) { /* analytics must never break checkout */ }
+  }
+  function stayParams(extra) {
+    var p = { check_in: state.checkIn, check_out: state.checkOut, guests: state.guests, private_offer: !!state.offer };
+    try {
+      var n = Math.round((new Date(state.checkOut + 'T12:00:00') - new Date(state.checkIn + 'T12:00:00')) / 864e5);
+      if (n > 0) p.nights = n;
+    } catch (e) {}
+    if (extra) for (var k in extra) p[k] = extra[k];
+    return p;
+  }
+
+  /* ----------------------------------------------------------
      Internal state
   ---------------------------------------------------------- */
   const state = {
@@ -496,6 +519,7 @@
     hideError();
     el('btn-continue-to-step2').disabled = true;
     fetchQuote();
+    track('begin_checkout', stayParams({ currency: 'USD' }));
   };
 
   /* ----------------------------------------------------------
@@ -504,6 +528,7 @@
 
   function enterStep2() {
     goToStep(2);
+    track('guest_details', stayParams());
     var upsellSection = el('checkout-upsells');
     if (upsellSection) upsellSection.style.display = 'none';
   }
@@ -670,6 +695,14 @@
     if (booking.mode === 'test') {
       el('co-confirmation-total').textContent += ' (TEST MODE: no real charge)';
     }
+    // Test-mode bookings get their own event so they never count as a real booking.
+    track(booking.mode === 'test' ? 'test_booking' : 'purchase', stayParams({
+      transaction_id: booking.confirmationCode || undefined,
+      value: (booking.totalCents || 0) / 100,
+      deposit: (booking.dueTodayCents || 0) / 100,
+      currency: 'USD',
+      items: [{ item_id: 'sunshine-canyon-retreat', item_name: 'Sunshine Canyon Retreat', price: (booking.totalCents || 0) / 100, quantity: 1 }]
+    }));
   }
 
   /* ----------------------------------------------------------
@@ -745,6 +778,7 @@
         hideSpinner();
         el('btn-continue-to-payment').disabled = false;
         goToStep(3);
+        track('add_payment_info', stayParams({ payment_open: !!(data.bookingOpen && data.publishableKey) }));
         if (!data.bookingOpen || !data.publishableKey) {
           el('stripe-elements-form').setAttribute('hidden', '');
           el('checkout-payment-fallback').removeAttribute('hidden');
@@ -848,6 +882,17 @@
         window.checkoutOpen({ checkIn: checkIn, checkOut: checkOut, guests: guests });
       });
     });
+
+    // GA4: count price comparisons. The page calls comparePrices() by name at click time.
+    if (typeof window.comparePrices === 'function') {
+      var origComparePrices = window.comparePrices;
+      window.comparePrices = function () {
+        var ci = (document.getElementById('pw-checkin') || {}).value || null;
+        var co = (document.getElementById('pw-checkout') || {}).value || null;
+        if (ci && co) track('compare_prices', { check_in: ci, check_out: co });
+        return origComparePrices.apply(this, arguments);
+      };
+    }
 
     // Last, once the drawer is wired: open the checkout if this page was reached by a
     // private booking link.
